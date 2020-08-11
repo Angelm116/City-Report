@@ -1,9 +1,12 @@
 package com.example.angelmendez.cityreport;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.core.view.GravityCompat;
+import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.viewpager.widget.ViewPager;
 
 import android.Manifest;
@@ -13,6 +16,7 @@ import android.location.Location;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.Window;
@@ -23,12 +27,14 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
+import com.google.android.material.navigation.NavigationView;
 import com.google.android.material.tabs.TabLayout;
 
 import org.w3c.dom.Text;
@@ -40,34 +46,44 @@ import static com.google.android.gms.location.LocationServices.getFusedLocationP
 
 
 public class MainActivity extends AppCompatActivity implements locationCheckFragment.OnFragmentInteractionListener,
-         DescriptionFragment.OnFragmentInteractionListener{
+         DescriptionFragment.OnFragmentInteractionListener, NavigationView.OnNavigationItemSelectedListener {
 
 
     CustomViewPager viewPager;
     SectionsPagerAdapter sectionsPagerAdapter;
     TabLayout tabIndicator;
     LatLng latLng;
-
-    //overview: this app has 3 pages represented by fragments, enclosed in a tablayout, and controlled by a viewpager
-    // page 1 or locationcheckfragment, gets the user's location, displays it, asks for confirmation and trasitions to the next page.
-    // page 2 or complaintfragment, allows the user to choose a category for their complaint and moves on to the next page
-    // page 3 or descriptionfragment, prompts the user for a description, allows them to add a picture and submit. STILL NEEDS WORK (A LOT lol)
-    // the idea is that as the user provides us with info in the app, we store that information in an object, so that we can simply upload
-    // that object to the server
+    DrawerLayout drawerLayout;
+    NavigationView navigationView;
+    androidx.appcompat.widget.Toolbar toolbar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-
+        getLastLocation();
         // This code makes the activity on full screen
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
                 WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
-
         // this code inflates the layout of the mainactivity
+//        setContentView(R.layout.activity_intro);
         setContentView(R.layout.activity_intro);
+
+        drawerLayout = findViewById(R.id.drawer_layout);
+        navigationView = findViewById(R.id.nav_view);
+        toolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+        navigationView.bringToFront();
+        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(this,drawerLayout,toolbar,R.string.navigation_drawer_open,R.string.navigation_drawer_close);
+        drawerLayout.addDrawerListener(toggle);
+        toggle.setDrawerIndicatorEnabled(true);
+        toggle.syncState();
+        navigationView.setNavigationItemSelectedListener(this);
+
+
+
 
 
         // This code initializes the variables
@@ -91,7 +107,9 @@ public class MainActivity extends AppCompatActivity implements locationCheckFrag
         tabIndicator.setupWithViewPager(viewPager);
 
         // this method is for the maps portion of the app
-        getLastLocation();
+
+
+
     }
 
     // This function gets executed whenever the user chooses a complaint in the
@@ -99,10 +117,7 @@ public class MainActivity extends AppCompatActivity implements locationCheckFrag
     // this function is supposed to add the users selection (what complaint) to
     // the object that packs all the info that we will send to the server
     // also it needs to show the last screen
-    public void complaintButton(final View view)
-    {
-        viewPager.setCurrentItem(2);// sets screen to last screen
-    }
+
 
     // the purpose of this method is to be called from the locationCheckfragment
     // it acts as an intermediate between getlastLocation() and locationcheckfragment
@@ -155,8 +170,13 @@ public class MainActivity extends AppCompatActivity implements locationCheckFrag
                     public void onSuccess(Location location) {
                         // GPS location can be null if GPS is switched off
                         if (location != null) {
-                            latLng = new LatLng(location.getLatitude(), location.getLongitude());
+//                            latLng = new LatLng(location.getLatitude(), location.getLongitude());
+                              latLng = new LatLng(-33.852, 151.211);
                             //onLocationChanged(location);
+                        }
+                        else{
+                            Log.d("MapDemoActivity", "Error trying to get last GPS location");
+                            latLng = new LatLng(-33.852, 151.211);
                         }
                     }
                 })
@@ -173,5 +193,40 @@ public class MainActivity extends AppCompatActivity implements locationCheckFrag
     @Override
     public void onFragmentInteraction(Uri uri) {
 
+    }
+
+    @Override
+    public void onBackPressed(){
+        if(drawerLayout.isDrawerOpen(GravityCompat.START)){
+            drawerLayout.closeDrawer(GravityCompat.START);
+        }
+        else {
+            super.onBackPressed();
+        }
+    }
+
+    @Override
+    public boolean onNavigationItemSelected(MenuItem item) {
+        switch(item.getItemId()){
+            case R.id.nav_home:
+                break;
+            case R.id.drafts:
+                Intent draftsIntent = new Intent(MainActivity.this,MainActivity.class);
+                startActivity(draftsIntent);
+                break;
+            case R.id.history:
+                Intent historyIntent = new Intent(MainActivity.this,MainActivity.class);
+                startActivity(historyIntent);
+                break;
+            case R.id.share:
+                Toast.makeText(this, "Share", Toast.LENGTH_SHORT).show();
+                break;
+        }
+        drawerLayout.closeDrawer(GravityCompat.START);
+        return true;
+    }
+
+    public void submit(View view) {
+        finish();
     }
 }
