@@ -30,7 +30,9 @@ import android.widget.Toast;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
@@ -46,7 +48,7 @@ import static com.google.android.gms.location.LocationServices.getFusedLocationP
 
 
 public class MainActivity extends AppCompatActivity implements locationCheckFragment.OnFragmentInteractionListener,
-         DescriptionFragment.OnFragmentInteractionListener, NavigationView.OnNavigationItemSelectedListener {
+        DescriptionFragment.OnFragmentInteractionListener, NavigationView.OnNavigationItemSelectedListener {
 
 
     CustomViewPager viewPager;
@@ -57,11 +59,14 @@ public class MainActivity extends AppCompatActivity implements locationCheckFrag
     NavigationView navigationView;
     androidx.appcompat.widget.Toolbar toolbar;
 
+    private FusedLocationProviderClient fusedLocationProviderClient;
+    private Location lastKnownLocation;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        getLastLocation();
+
         // This code makes the activity on full screen
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
@@ -71,30 +76,29 @@ public class MainActivity extends AppCompatActivity implements locationCheckFrag
 //        setContentView(R.layout.activity_intro);
         setContentView(R.layout.activity_intro);
 
+        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
+        getLastLocation();
+
         drawerLayout = findViewById(R.id.drawer_layout);
         navigationView = findViewById(R.id.nav_view);
         toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         navigationView.bringToFront();
-        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(this,drawerLayout,toolbar,R.string.navigation_drawer_open,R.string.navigation_drawer_close);
+        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(this, drawerLayout, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
         drawerLayout.addDrawerListener(toggle);
         toggle.setDrawerIndicatorEnabled(true);
         toggle.syncState();
         navigationView.setNavigationItemSelectedListener(this);
 
 
-
-
-
         // This code initializes the variables
         tabIndicator = findViewById(R.id.tab_indicator);              // this is the dots in the bottom left corner
-
 
 
         // setup viewpager; The ViewPager is like a container for all the fragment; it is in
         // charge of transitioning the view of the page from fragment to fragment, hence "viewpager".
         // The PagerAdapter tells the viewpager which fragment to display
-        viewPager =findViewById(R.id.screen_viewpager);
+        viewPager = findViewById(R.id.screen_viewpager);
         sectionsPagerAdapter = new SectionsPagerAdapter(this, getSupportFragmentManager());
         viewPager.setAdapter(sectionsPagerAdapter);
 
@@ -107,7 +111,6 @@ public class MainActivity extends AppCompatActivity implements locationCheckFrag
         tabIndicator.setupWithViewPager(viewPager);
 
         // this method is for the maps portion of the app
-
 
 
     }
@@ -132,61 +135,39 @@ public class MainActivity extends AppCompatActivity implements locationCheckFrag
     // for now, no need worry about it
     public void getLastLocation() {
 
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.INTERNET)
-                != PackageManager.PERMISSION_GRANTED) {
-
-            ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.INTERNET},
-                    1);
-            // Permission is not granted
-            Log.d("MapDemoActivity", "Internet permission not granted");
-
-        }
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED) {
-
-            ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
-                    2);
-            Log.d("MapDemoActivity", "Fine permission not granted");
-
-        }
-
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED) {
-
-            ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.ACCESS_COARSE_LOCATION},
-                    3);
-            Log.d("MapDemoActivity", "Coarse permission not granted");
-
-        }
+        getLocationPermission();
         // Get last known recent location using new Google Play Services SDK (v11+)
         FusedLocationProviderClient locationClient = getFusedLocationProviderClient(this);
 
-        locationClient.getLastLocation()
-                .addOnSuccessListener(new OnSuccessListener<Location>() {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            Log.d("PERMISSION", "getLastLocation: PERMISSION NOT GRANTED ");
+
+            return;
+        }
+
+        try {
+
+                Task<Location> locationResult = fusedLocationProviderClient.getLastLocation();
+                locationResult.addOnCompleteListener(this, new OnCompleteListener<Location>() {
                     @Override
-                    public void onSuccess(Location location) {
-                        // GPS location can be null if GPS is switched off
-                        if (location != null) {
-//                            latLng = new LatLng(location.getLatitude(), location.getLongitude());
-                              latLng = new LatLng(-33.852, 151.211);
-                            //onLocationChanged(location);
+                    public void onComplete(@NonNull Task<Location> task) {
+                        if (task.isSuccessful()) {
+                            // Set the map's camera position to the current location of the device.
+                            lastKnownLocation = task.getResult();
+                            latLng = new LatLng(lastKnownLocation.getLatitude(), lastKnownLocation.getLongitude());
+
+                        } else {
+                            Log.d("LOCATION", "Current location is null. Using defaults.");
+                            Log.e("LOCATION", "Exception: %s", task.getException());
+
                         }
-                        else{
-                            Log.d("MapDemoActivity", "Error trying to get last GPS location");
-                            latLng = new LatLng(-33.852, 151.211);
-                        }
-                    }
-                })
-                .addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        Log.d("MapDemoActivity", "Error trying to get last GPS location");
-                        e.printStackTrace();
                     }
                 });
+
+        } catch (SecurityException e)  {
+            Log.e("Exception: %s", e.getMessage(), e);
+        }
+
     }
 
     // you can ignore this
@@ -224,6 +205,39 @@ public class MainActivity extends AppCompatActivity implements locationCheckFrag
         }
         drawerLayout.closeDrawer(GravityCompat.START);
         return true;
+    }
+
+    // [START maps_current_place_location_permission]
+    private void getLocationPermission() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.INTERNET)
+                != PackageManager.PERMISSION_GRANTED) {
+
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.INTERNET},
+                    1);
+            // Permission is not granted
+            Log.d("MapDemoActivity", "Internet permission not granted");
+
+        }
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                    2);
+            Log.d("MapDemoActivity", "Fine permission not granted");
+
+        }
+
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.ACCESS_COARSE_LOCATION},
+                    3);
+            Log.d("MapDemoActivity", "Coarse permission not granted");
+
+        }
     }
 
     public void submit(View view) {
