@@ -74,41 +74,43 @@ public class MainActivity extends AppCompatActivity implements locationCheckFrag
 
         // this code inflates the layout of the mainactivity
 //        setContentView(R.layout.activity_intro);
-        setContentView(R.layout.activity_intro);
+        setContentView(R.layout.submit_activity);
 
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
         getLastLocation();
 
-        drawerLayout = findViewById(R.id.drawer_layout);
-        navigationView = findViewById(R.id.nav_view);
-        toolbar = findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
-        navigationView.bringToFront();
-        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(this, drawerLayout, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
-        drawerLayout.addDrawerListener(toggle);
-        toggle.setDrawerIndicatorEnabled(true);
-        toggle.syncState();
-        navigationView.setNavigationItemSelectedListener(this);
+//        drawerLayout = findViewById(R.id.drawer_layout);
+//        navigationView = findViewById(R.id.nav_view);
+//        toolbar = findViewById(R.id.toolbar);
+//        setSupportActionBar(toolbar);
+//        navigationView.bringToFront();
+//        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(this, drawerLayout, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
+//        drawerLayout.addDrawerListener(toggle);
+//        toggle.setDrawerIndicatorEnabled(true);
+//        toggle.syncState();
+//        navigationView.setNavigationItemSelectedListener(this);
 
 
         // This code initializes the variables
-        tabIndicator = findViewById(R.id.tab_indicator);              // this is the dots in the bottom left corner
+//        tabIndicator = findViewById(R.id.tab_indicator);              // this is the dots in the bottom left corner
 
 
         // setup viewpager; The ViewPager is like a container for all the fragment; it is in
         // charge of transitioning the view of the page from fragment to fragment, hence "viewpager".
         // The PagerAdapter tells the viewpager which fragment to display
-        viewPager = findViewById(R.id.screen_viewpager);
-        sectionsPagerAdapter = new SectionsPagerAdapter(this, getSupportFragmentManager());
-        viewPager.setAdapter(sectionsPagerAdapter);
 
-        viewPager.setPagingEnabled(false);
+//        viewPager = findViewById(R.id.screen_viewpager);
+//        sectionsPagerAdapter = new SectionsPagerAdapter(this, getSupportFragmentManager());
+//        viewPager.setAdapter(sectionsPagerAdapter);
+//
+//        viewPager.setPagingEnabled(false);
 
 
         // setup tablayout with viewpager, so that the tab layout reacts to the change in pages
         // The tablayout is basically the layout where all of this is taking place, it includes
         // the three dots on the bottom and their animation and it allows us to swipe among pages
-        tabIndicator.setupWithViewPager(viewPager);
+
+//        tabIndicator.setupWithViewPager(viewPager);
 
         // this method is for the maps portion of the app
 
