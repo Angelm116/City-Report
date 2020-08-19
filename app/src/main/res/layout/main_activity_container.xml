@@ -5,13 +5,14 @@
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MainActivityF">
+    tools:context=".MainActivity">
 
     <FrameLayout
-        android:id="@+id/activity_fragment_view"
+        android:id="@+id/main_activity_container"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         />
+
 
     <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"

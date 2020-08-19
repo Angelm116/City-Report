@@ -1,15 +1,21 @@
 package com.example.angelmendez.cityreport;
 
 import android.Manifest;
+import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
 import android.os.Bundle;
 
+import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.Fragment;
 
+import android.provider.MediaStore;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.TextView;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -25,11 +31,24 @@ public class FormFragment extends Fragment {
 
     MapView mMapView;
     private GoogleMap googleMap;
+    TextView pictureAttached;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 
         View rootView = inflater.inflate(R.layout.fragment_form, container, false);
+
+        Button cameraButton = (Button) rootView.findViewById(R.id.add_picture_btn);
+        pictureAttached = rootView.findViewById(R.id.picture_attached);
+        pictureAttached.setVisibility(View.INVISIBLE);
+
+        cameraButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+                startActivityForResult(intent, 0);
+            }
+        });
 
         mMapView = (MapView) rootView.findViewById(R.id.map);
         mMapView.onCreate(savedInstanceState);
@@ -68,13 +87,21 @@ public class FormFragment extends Fragment {
 //                CameraPosition cameraPosition = new CameraPosition.Builder().target(sydney).zoom(12).build();
 //                googleMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
 
-                LatLng currentLocation = new LatLng(-34, 151);
-                mMap.addMarker(new MarkerOptions().position(currentLocation).title("Current Location").draggable(false));
+                //new LatLng(-34, 151);
 
-                float zoomLevel = 18.5f; //This goes up to 21
-                mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(currentLocation, zoomLevel));
+//                try {
+//                    Thread.sleep(5000);
+//                } catch (InterruptedException e) {
+//                    e.printStackTrace();
+//                }
 
-                mMap.getUiSettings().setAllGesturesEnabled(false);
+//                LatLng currentLocation = ((MainActivity) getActivity()).getLatLng();
+//                mMap.addMarker(new MarkerOptions().position(currentLocation).title("Current Location").draggable(false));
+//
+//                float zoomLevel = 18.5f; //This goes up to 21
+//                mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(currentLocation, zoomLevel));
+//
+//                mMap.getUiSettings().setAllGesturesEnabled(false);
 
             }
         });
@@ -82,14 +109,28 @@ public class FormFragment extends Fragment {
         return rootView;
     }
 
-    public void updateMap(LatLng lat){
-        LatLng currentLocation = lat;
-        googleMap.addMarker(new MarkerOptions().position(currentLocation).title("Current Location").draggable(false));
 
-        float zoomLevel = 18.5f; //This goes up to 21
-        googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(currentLocation, zoomLevel));
 
-        googleMap.getUiSettings().setAllGesturesEnabled(false);
+    public void updateMap(LatLng lat) {
+
+        mMapView.getMapAsync(new OnMapReadyCallback() {
+            @Override
+            public void onMapReady(GoogleMap mMap) {
+                googleMap = mMap;
+
+
+
+                googleMap.addMarker(new MarkerOptions().position(((MainActivity) getActivity()).getLatLng()).title("Current Location").draggable(false));
+
+                float zoomLevel = 18.5f; //This goes up to 21
+                googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(((MainActivity) getActivity()).getLatLng(), zoomLevel));
+
+                googleMap.getUiSettings().setAllGesturesEnabled(false);
+
+            }
+        });
+
+
     }
 
     @Override
@@ -114,5 +155,19 @@ public class FormFragment extends Fragment {
     public void onLowMemory() {
         super.onLowMemory();
         mMapView.onLowMemory();
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        Bitmap bitmap = (Bitmap)data.getExtras().get("data");
+
+        //imageView.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
+
+        pictureAttached.setVisibility(View.VISIBLE);
+
+
     }
 }

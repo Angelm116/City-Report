@@ -7,12 +7,14 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 
 
 import com.google.android.gms.location.FusedLocationProviderClient;
@@ -31,6 +33,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private FragmentManager fragmentManager;
     private Fragment switchFragment;
     public Fragment currentFragment;
+    public FormFragment formFragment;
+    public ChangeLocationFragment changeLocationFragment;
 
     private FusedLocationProviderClient fusedLocationProviderClient;
     private Location lastKnownLocation;
@@ -44,21 +48,55 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+
+
+
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+
         fragmentManager = getSupportFragmentManager();
+        formFragment = new FormFragment();
+        changeLocationFragment = new ChangeLocationFragment();
+        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
 
 
+        fragmentTransaction.add(R.id.main_activity_container, formFragment, "formFragment");
+        fragmentTransaction.add(R.id.main_activity_container, changeLocationFragment, "changeLocationFragment").hide(changeLocationFragment);
+        fragmentTransaction.commit();
 
-
-
-//        FormFragment nameFragment = new FormFragment();
-//        fragmentManager.beginTransaction().add(R.id.activity_fragment_view, nameFragment).commit();
-
-        FormFragment fragment = new FormFragment();
-        currentFragment = fragment;
-        fragmentManager.beginTransaction().add(R.id.activity_fragment_view, fragment).commit();
-
+        if (formFragment == null)
+        {
+            Log.d("TAG", "onCreate: rage");
+        }
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
         getLastLocation();
+
+    }
+
+    public void changeLocationStart(View view){
+
+        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+        fragmentTransaction.hide(formFragment);
+        fragmentTransaction.show(changeLocationFragment);
+        fragmentTransaction.commit();
+
+        changeLocationFragment.updateMap(latLng);
+    }
+
+    public void changeLocationEnd(LatLng location){
+
+        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+        fragmentTransaction.hide(changeLocationFragment);
+        fragmentTransaction.show(formFragment);
+        fragmentTransaction.commit();
+
+        latLng = location;
+        formFragment.updateMap(location);
+
     }
 
     @Override
@@ -95,7 +133,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                         }
                         Log.d("test", "onCreate: " + latLng);
 
-                        ((FormFragment)currentFragment).updateMap(latLng);
+                        if (formFragment == null)
+                        {
+                            Log.d("fragment", "isnull");
+                        }
+                       formFragment.updateMap(latLng);
                     } else {
                         Log.d("LOCATION", "Current location is null. Using defaults.");
                         Log.e("LOCATION", "Exception: %s", task.getException());
@@ -147,7 +189,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     public LatLng getLatLng() {
 
-        getLastLocation();
+
         return latLng;
     }
+
+
 }

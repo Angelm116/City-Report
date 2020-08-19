@@ -26,7 +26,7 @@ public class  SectionsPagerAdapter extends FragmentPagerAdapter {
         switch(position){
 
             case 0:
-                return new locationCheckFragment();
+                return new ChangeLocationFragment();
 
             case 1:
                 return new DescriptionFragment();

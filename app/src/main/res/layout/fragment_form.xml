@@ -85,7 +85,7 @@
                     android:layout_marginVertical="10dp"
                     android:background="@drawable/submit_background"
                     android:fontFamily="sans-serif-medium"
-                    android:onClick="changeLocation"
+                    android:onClick="changeLocationStart"
                     android:text="Change Location"
                     android:textColor="#fff" />
 
