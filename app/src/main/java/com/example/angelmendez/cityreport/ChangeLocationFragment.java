@@ -1,13 +1,11 @@
 package com.example.angelmendez.cityreport;
 
-import android.content.Context;
 import android.net.Uri;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
-import androidx.viewpager.widget.ViewPager;
 
 import android.view.LayoutInflater;
 import android.view.View;
@@ -44,7 +42,7 @@ public class ChangeLocationFragment extends Fragment implements OnMapReadyCallba
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-        mView = inflater.inflate(R.layout.fragment_location_check, container, false);
+        mView = inflater.inflate(R.layout.fragment_change_location, container, false);
 
         Button button = (Button)mView.findViewById(R.id.button);
 
