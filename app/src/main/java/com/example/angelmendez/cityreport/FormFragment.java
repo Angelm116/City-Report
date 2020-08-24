@@ -26,6 +26,8 @@ import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+import android.net.Uri;
+
 
 public class FormFragment extends Fragment {
 
@@ -33,12 +35,16 @@ public class FormFragment extends Fragment {
     private GoogleMap googleMap;
     TextView pictureAttached;
 
+    private static final int PICK_IMAGE = 100;
+    Uri imageUri;
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 
         View rootView = inflater.inflate(R.layout.fragment_form, container, false);
 
         Button cameraButton = (Button) rootView.findViewById(R.id.add_picture_btn);
+        Button galleryButton = (Button) rootView.findViewById(R.id.add_gallery_btn);
         pictureAttached = rootView.findViewById(R.id.picture_attached);
         pictureAttached.setVisibility(View.INVISIBLE);
 
@@ -47,6 +53,13 @@ public class FormFragment extends Fragment {
             public void onClick(View v) {
                 Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
                 startActivityForResult(intent, 0);
+            }
+        });
+        galleryButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent gallery = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.INTERNAL_CONTENT_URI);
+                startActivityForResult(gallery, 100);
             }
         });
 
@@ -161,7 +174,13 @@ public class FormFragment extends Fragment {
     public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
-        Bitmap bitmap = (Bitmap)data.getExtras().get("data");
+        if (requestCode == 0) {
+            Bitmap bitmap = (Bitmap) data.getExtras().get("data");
+        }
+
+        if (requestCode == 100) {
+
+        }
 
         //imageView.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
