@@ -187,8 +187,10 @@
                         android:background="@drawable/selector"
                         android:button="@android:color/transparent"
                         android:stateListAnimator="@animator/anim_test"
-                        android:text="Radio Button 1"
-                        android:textAlignment="center" />
+                        android:text="Traffic Danger"
+                        android:textColor="@color/cardview_dark_background"
+                        android:textAlignment="center"
+                        android:drawableLeft="@drawable/icon_crash_selector" />
 
                     <androidx.appcompat.widget.AppCompatRadioButton
                         android:layout_width="220dp"
@@ -200,8 +202,26 @@
                         android:background="@drawable/selector"
                         android:button="@android:color/transparent"
                         android:stateListAnimator="@animator/anim_test"
-                        android:text="Radio Button 1"
-                        android:textAlignment="center" />
+                        android:text="Suspicious ACtivity"
+                        android:textColor="@color/cardview_dark_background"
+                        android:textAlignment="center"
+                        android:drawableLeft="@drawable/icon_car_selector" />
+
+                    <androidx.appcompat.widget.AppCompatRadioButton
+                        android:layout_width="220dp"
+                        android:layout_height="50dp"
+                        android:layout_gravity="center"
+                        android:layout_marginHorizontal="10dp"
+                        android:layout_marginBottom="7dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/selector"
+                        android:button="@android:color/transparent"
+                        android:cursorVisible="true"
+                        android:drawableLeft="@drawable/icon_person_selector"
+                        android:stateListAnimator="@animator/anim_test"
+                        android:text="Pedestrian Danger"
+                        android:textAlignment="center"
+                        android:textColor="@color/cardview_dark_background" />
 
                     <androidx.appcompat.widget.AppCompatRadioButton
                         android:layout_width="220dp"
@@ -213,23 +233,10 @@
                         android:background="@drawable/selector"
                         android:button="@android:color/transparent"
                         android:stateListAnimator="@animator/anim_test"
-                        android:text="Radio Button 1"
-                        android:textAlignment="center" />
-
-                    <androidx.appcompat.widget.AppCompatRadioButton
-                        android:layout_width="220dp"
-                        android:layout_height="50dp"
-                        android:layout_gravity="center"
-                        android:layout_marginHorizontal="10dp"
-                        android:layout_marginBottom="7dp"
-                        android:layout_weight="1"
-                        android:background="@drawable/selector"
-                        android:button="@android:color/transparent"
-                        android:stateListAnimator="@animator/anim_test"
-                        android:text="Radio Button 1"
-                        android:textAlignment="center" />
-
-
+                        android:text="Physical Damage"
+                        android:textColor="@color/cardview_dark_background"
+                        android:textAlignment="center"
+                        android:drawableLeft="@drawable/icon_light_selector" />
 
 
                 </RadioGroup>
