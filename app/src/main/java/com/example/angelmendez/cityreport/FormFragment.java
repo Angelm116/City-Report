@@ -18,9 +18,11 @@ import androidx.fragment.app.Fragment;
 
 import android.provider.MediaStore;
 import android.view.LayoutInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.PopupMenu;
 import android.widget.TextView;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -33,10 +35,10 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 import android.net.Uri;
+import android.widget.Toast;
 
 
-
-public class FormFragment extends Fragment {
+public class FormFragment extends Fragment implements PopupMenu.OnMenuItemClickListener {
 
     MapView mMapView;
     private GoogleMap googleMap;
@@ -51,16 +53,19 @@ public class FormFragment extends Fragment {
         View rootView = inflater.inflate(R.layout.fragment_form, container, false);
 
         Button cameraButton = (Button) rootView.findViewById(R.id.add_picture_btn);
-        Button galleryButton = (Button) rootView.findViewById(R.id.add_gallery_btn);
         pictureAttached = rootView.findViewById(R.id.picture_attached);
         pictureAttached.setVisibility(View.INVISIBLE);
 
         cameraButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                selectImage();
+                PopupMenu popup = new PopupMenu(getActivity().getApplicationContext(), v);
+                popup.setOnMenuItemClickListener(FormFragment.this);
+                popup.inflate(R.menu.popup_menu);
+                popup.show();
             }
         });
+
 
         mMapView = (MapView) rootView.findViewById(R.id.map);
         mMapView.onCreate(savedInstanceState);
@@ -121,31 +126,21 @@ public class FormFragment extends Fragment {
         return rootView;
     }
 
-    private void selectImage(Context context) {
-        final CharSequence[] options = {"Take Photo", "Choose from Gallery", "Cancel"};
-
-        AlertDialog.Builder builder = new AlertDialog.Builder(context);
-        builder.setTitle("Choose your profile picture");
-
-        builder.setItems(options, new DialogInterface.OnClickListener() {
-
-            @Override
-            public void onClick(DialogInterface dialog, int item) {
-
-                if (options[item].equals("Take Photo")) {
-                    Intent takePicture = new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
-                    startActivityForResult(takePicture, 0);
-
-                } else if (options[item].equals("Choose from Gallery")) {
-                    Intent pickPhoto = new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
-                    startActivityForResult(pickPhoto, 1);//one can be replaced with any action code
-
-                } else if (options[item].equals("Cancel")) {
-                    dialog.dismiss();
-                }
-            }
-        });
-        builder.show();
+    @Override
+    public boolean onMenuItemClick(MenuItem item) {
+        Toast.makeText(getActivity().getApplicationContext(), "Selected Item: " + item.getTitle(), Toast.LENGTH_SHORT).show();
+        switch (item.getItemId()) {
+            case R.id.from_camera:
+                Intent takePicture = new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
+                startActivityForResult(takePicture, 0);
+                return true;
+            case R.id.from_gallery:
+                Intent pickPhoto = new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+                startActivityForResult(pickPhoto, 1);//one can be replaced with any action code
+                return true;
+            default:
+                return false;
+        }
     }
 
 
@@ -155,7 +150,6 @@ public class FormFragment extends Fragment {
             @Override
             public void onMapReady(GoogleMap mMap) {
                 googleMap = mMap;
-
 
 
                 googleMap.addMarker(new MarkerOptions().position(((MainActivity) getActivity()).getLatLng()).title("Current Location").draggable(false));
@@ -194,7 +188,7 @@ public class FormFragment extends Fragment {
         super.onLowMemory();
         mMapView.onLowMemory();
     }
-
+/*
     @Override
     public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         if (resultCode != RESULT_CANCELED) {
@@ -225,7 +219,9 @@ public class FormFragment extends Fragment {
                     break;
             }
         }
-}
+    }
 
     private DownloadManager getContentResolver() {
     }
+  */
+}

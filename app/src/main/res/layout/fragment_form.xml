@@ -282,18 +282,6 @@
                         android:text="Add Picture"
                         android:textColor="#fff" />
 
-                    <Button
-                        android:id="@+id/add_gallery_btn"
-                        android:layout_width="125dp"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="right|left"
-                        android:layout_marginTop="10dp"
-                        android:layout_weight="1"
-                        android:background="@drawable/centre_button"
-                        android:fontFamily="sans-serif-medium"
-                        android:text="From Gallery"
-                        android:textColor="#fff" />
-
                     <TextView
                         android:id="@+id/picture_attached"
                         android:layout_width="wrap_content"
