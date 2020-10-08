@@ -1,9 +1,15 @@
 package com.example.angelmendez.cityreport;
 
 import android.Manifest;
+import android.app.AlertDialog;
+import android.app.DownloadManager;
+import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
 
 import androidx.annotation.Nullable;
@@ -12,9 +18,11 @@ import androidx.fragment.app.Fragment;
 
 import android.provider.MediaStore;
 import android.view.LayoutInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.PopupMenu;
 import android.widget.TextView;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -26,12 +34,18 @@ import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+import android.net.Uri;
+import android.widget.Toast;
 
-public class FormFragment extends Fragment {
+
+public class FormFragment extends Fragment implements PopupMenu.OnMenuItemClickListener {
 
     MapView mMapView;
     private GoogleMap googleMap;
     TextView pictureAttached;
+
+    private static final int PICK_IMAGE = 100;
+    Uri imageUri;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -45,10 +59,13 @@ public class FormFragment extends Fragment {
         cameraButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-                startActivityForResult(intent, 0);
+                PopupMenu popup = new PopupMenu(getActivity().getApplicationContext(), v);
+                popup.setOnMenuItemClickListener(FormFragment.this);
+                popup.inflate(R.menu.popup_menu);
+                popup.show();
             }
         });
+
 
         mMapView = (MapView) rootView.findViewById(R.id.map);
         mMapView.onCreate(savedInstanceState);
@@ -109,6 +126,22 @@ public class FormFragment extends Fragment {
         return rootView;
     }
 
+    @Override
+    public boolean onMenuItemClick(MenuItem item) {
+        Toast.makeText(getActivity().getApplicationContext(), "Selected Item: " + item.getTitle(), Toast.LENGTH_SHORT).show();
+        switch (item.getItemId()) {
+            case R.id.from_camera:
+                Intent takePicture = new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
+                startActivityForResult(takePicture, 0);
+                return true;
+            case R.id.from_gallery:
+                Intent pickPhoto = new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+                startActivityForResult(pickPhoto, 1);//one can be replaced with any action code
+                return true;
+            default:
+                return false;
+        }
+    }
 
 
     public void updateMap(LatLng lat) {
@@ -117,7 +150,6 @@ public class FormFragment extends Fragment {
             @Override
             public void onMapReady(GoogleMap mMap) {
                 googleMap = mMap;
-
 
 
                 googleMap.addMarker(new MarkerOptions().position(((MainActivity) getActivity()).getLatLng()).title("Current Location").draggable(false));
@@ -156,18 +188,40 @@ public class FormFragment extends Fragment {
         super.onLowMemory();
         mMapView.onLowMemory();
     }
-
+/*
     @Override
     public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
+        if (resultCode != RESULT_CANCELED) {
+            switch (requestCode) {
+                case 0:
+                    if (resultCode == RESULT_OK && data != null) {
+                        Bitmap selectedImage = (Bitmap) data.getExtras().get("data");
+                    }
 
-        Bitmap bitmap = (Bitmap)data.getExtras().get("data");
+                    break;
+                case 1:
+                    if (resultCode == RESULT_OK && data != null) {
+                        Uri selectedImage = data.getData();
+                        String[] filePathColumn = {MediaStore.Images.Media.DATA};
+                        if (selectedImage != null) {
+                            Cursor cursor = getContentResolver().query(selectedImage,
+                                    filePathColumn, null, null, null);
+                            if (cursor != null) {
+                                cursor.moveToFirst();
 
-        //imageView.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+                                int columnIndex = cursor.getColumnIndex(filePathColumn[0]);
+                                String picturePath = cursor.getString(columnIndex);
+                                cursor.close();
+                            }
+                        }
 
-
-        pictureAttached.setVisibility(View.VISIBLE);
-
-
+                    }
+                    break;
+            }
+        }
     }
+
+    private DownloadManager getContentResolver() {
+    }
+  */
 }
