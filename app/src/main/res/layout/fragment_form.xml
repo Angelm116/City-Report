@@ -177,6 +177,7 @@
 
 
                     <androidx.appcompat.widget.AppCompatRadioButton
+                        android:id="@+id/category_1"
                         android:layout_width="220dp"
                         android:layout_height="50dp"
                         android:layout_gravity="center"
@@ -187,10 +188,11 @@
                         android:background="@drawable/selector"
                         android:button="@android:color/transparent"
                         android:stateListAnimator="@animator/anim_test"
-                        android:text="Radio Button 1"
+                        android:text="Traffic Danger"
                         android:textAlignment="center" />
 
                     <androidx.appcompat.widget.AppCompatRadioButton
+                        android:id="@+id/category_2"
                         android:layout_width="220dp"
                         android:layout_height="50dp"
                         android:layout_gravity="center"
@@ -200,10 +202,11 @@
                         android:background="@drawable/selector"
                         android:button="@android:color/transparent"
                         android:stateListAnimator="@animator/anim_test"
-                        android:text="Radio Button 1"
+                        android:text="Pedestrian Danger"
                         android:textAlignment="center" />
 
                     <androidx.appcompat.widget.AppCompatRadioButton
+                        android:id="@+id/category_3"
                         android:layout_width="220dp"
                         android:layout_height="50dp"
                         android:layout_gravity="center"
@@ -213,10 +216,11 @@
                         android:background="@drawable/selector"
                         android:button="@android:color/transparent"
                         android:stateListAnimator="@animator/anim_test"
-                        android:text="Radio Button 1"
+                        android:text="Physical Damage"
                         android:textAlignment="center" />
 
                     <androidx.appcompat.widget.AppCompatRadioButton
+                        android:id="@+id/category_4"
                         android:layout_width="220dp"
                         android:layout_height="50dp"
                         android:layout_gravity="center"
@@ -226,8 +230,8 @@
                         android:background="@drawable/selector"
                         android:button="@android:color/transparent"
                         android:stateListAnimator="@animator/anim_test"
-                        android:text="Radio Button 1"
-                        android:textAlignment="center" />
+                        android:text="Suspicious Activity"
+                        android:textAlignment="center"/>
 
 
 
@@ -251,7 +255,7 @@
                     app:layout_constraintTop_toTopOf="parent" />
 
                 <EditText
-                    android:id="@+id/txtFeed"
+                    android:id="@+id/description_input"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:layout_marginTop="5dp"
@@ -307,7 +311,6 @@
             android:layout_marginBottom="20dp"
             android:background="@drawable/submit_background"
             android:fontFamily="sans-serif-medium"
-            android:onClick="submit"
             android:text="Submit"
             android:textColor="#fff" />
 

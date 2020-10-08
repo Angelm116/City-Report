@@ -29,6 +29,7 @@ public class ChangeLocationFragment extends Fragment implements OnMapReadyCallba
     private View mView;
     private LatLng locationIn;
     private LatLng locationOut;
+    Marker marker;
 
 
     private OnFragmentInteractionListener mListener;
@@ -51,6 +52,7 @@ public class ChangeLocationFragment extends Fragment implements OnMapReadyCallba
                                   {
                                       @Override
                                       public void onClick(View v) {
+                                          marker.remove();
                                           ((MainActivity)getActivity()).changeLocationEnd(locationOut);
                                       }
                                   }
@@ -110,7 +112,8 @@ public class ChangeLocationFragment extends Fragment implements OnMapReadyCallba
         //((MainActivity)getActivity()).getLatLng();
         LatLng currentLocation = location;
         locationOut = currentLocation;
-        mMap.addMarker(new MarkerOptions().position(currentLocation).title("Current Location").draggable(true));
+        marker = mMap.addMarker(new MarkerOptions().position(currentLocation).title("Current Location").draggable(true));
+
 
         mMap.setOnMarkerDragListener(new GoogleMap.OnMarkerDragListener() {
             @Override
