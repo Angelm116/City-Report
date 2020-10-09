@@ -202,7 +202,7 @@
                         android:background="@drawable/selector"
                         android:button="@android:color/transparent"
                         android:stateListAnimator="@animator/anim_test"
-                        android:text="Suspicious ACtivity"
+                        android:text="Suspicious Activity"
                         android:textColor="@color/cardview_dark_background"
                         android:textAlignment="center"
                         android:drawableLeft="@drawable/icon_car_selector" />
