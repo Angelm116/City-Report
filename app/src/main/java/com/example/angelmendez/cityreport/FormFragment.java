@@ -4,15 +4,25 @@ import android.Manifest;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
 
+import android.app.AlertDialog;
+import android.app.DownloadManager;
+import android.content.Context;
+
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
 import androidx.core.widget.NestedScrollView;
 import androidx.fragment.app.Fragment;
+
+import android.view.MenuItem;
+import android.widget.PopupMenu;
+import android.net.Uri;
+import android.widget.Toast;
 
 import android.provider.MediaStore;
 import android.text.Editable;
@@ -51,8 +61,11 @@ import org.json.JSONObject;
 import java.text.DateFormat;
 import java.util.Calendar;
 
+import static android.app.Activity.RESULT_CANCELED;
+import static android.app.Activity.RESULT_OK;
 
-public class FormFragment extends Fragment {
+
+public class FormFragment extends Fragment implements PopupMenu.OnMenuItemClickListener{
 
     MapView mMapView;
     private GoogleMap googleMap;
@@ -94,8 +107,13 @@ public class FormFragment extends Fragment {
         cameraButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-                startActivityForResult(intent, 0);
+//                Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+//                startActivityForResult(intent, 0);
+
+                PopupMenu popup = new PopupMenu(getActivity().getApplicationContext(), v);
+                popup.setOnMenuItemClickListener(FormFragment.this);
+                popup.inflate(R.menu.popup_menu);
+                popup.show();
             }
         });
 
@@ -164,43 +182,6 @@ public class FormFragment extends Fragment {
             @Override
             public void onMapReady(GoogleMap mMap) {
                 googleMap = mMap;
-//
-//                // For showing a move to my location button
-//                if (ActivityCompat.checkSelfPermission(getActivity().getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(getActivity().getApplicationContext(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-//                    // TODO: Consider calling
-//                    //    ActivityCompat#requestPermissions
-//                    // here to request the missing permissions, and then overriding
-//                    //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-//                    //                                          int[] grantResults)
-//                    // to handle the case where the user grants the permission. See the documentation
-//                    // for ActivityCompat#requestPermissions for more details.
-//                    return;
-//                }
-//                googleMap.setMyLocationEnabled(true);
-//
-//                // For dropping a marker at a point on the Map
-//                LatLng sydney = new LatLng(-34, 151);
-//                googleMap.addMarker(new MarkerOptions().position(sydney).title("Marker Title").snippet("Marker Description"));
-//
-//                // For zooming automatically to the location of the marker
-//                CameraPosition cameraPosition = new CameraPosition.Builder().target(sydney).zoom(12).build();
-//                googleMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
-
-                //new LatLng(-34, 151);
-
-//                try {
-//                    Thread.sleep(5000);
-//                } catch (InterruptedException e) {
-//                    e.printStackTrace();
-//                }
-
-//                LatLng currentLocation = ((MainActivity) getActivity()).getLatLng();
-//                mMap.addMarker(new MarkerOptions().position(currentLocation).title("Current Location").draggable(false));
-//
-//                float zoomLevel = 18.5f; //This goes up to 21
-//                mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(currentLocation, zoomLevel));
-//
-//                mMap.getUiSettings().setAllGesturesEnabled(false);
 
             }
         });
@@ -365,16 +346,67 @@ public class FormFragment extends Fragment {
     }
 
     @Override
+    public boolean onMenuItemClick(MenuItem item) {
+        Toast.makeText(getActivity().getApplicationContext(), "Selected Item: " + item.getTitle(), Toast.LENGTH_SHORT).show();
+        switch (item.getItemId()) {
+            case R.id.from_camera:
+                Intent takePicture = new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
+                startActivityForResult(takePicture, 0);
+                return true;
+            case R.id.from_gallery:
+                Intent pickPhoto = new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+                startActivityForResult(pickPhoto, 1);//one can be replaced with any action code
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    @Override
     public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
-        photo = (Bitmap)data.getExtras().get("data");
+        if (resultCode != RESULT_CANCELED) {
+            switch (requestCode) {
+                case 0:
+                    if (resultCode == RESULT_OK && data != null) {
+                        Bitmap selectedImage = (Bitmap) data.getExtras().get("data");
+                        photo = selectedImage;
+                        pictureAttached.setVisibility(View.VISIBLE);
+                    }
 
-        //imageView.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+                    break;
+                case 1:
+                    if (resultCode == RESULT_OK && data != null) {
+                        Uri selectedImage = data.getData();
+                        String[] filePathColumn = {MediaStore.Images.Media.DATA};
+                        if (selectedImage != null) {
+                            Cursor cursor = (getActivity()).getContentResolver().query(selectedImage,
+                                    filePathColumn, null, null, null);
+                            if (cursor != null) {
+                                cursor.moveToFirst();
 
+                                int columnIndex = cursor.getColumnIndex(filePathColumn[0]);
+                                String picturePath = cursor.getString(columnIndex);
+                                cursor.close();
 
-        pictureAttached.setVisibility(View.VISIBLE);
+                                photo = BitmapFactory.decodeFile(picturePath);
+                                pictureAttached.setVisibility(View.VISIBLE);
+                            }
+                        }
+
+                    }
+                    break;
+            }
+        }
+    }
+
+//        photo = (Bitmap)data.getExtras().get("data");
+//
+//        //imageView.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+//
+//
+//        pictureAttached.setVisibility(View.VISIBLE);
 
 
     }
-}
