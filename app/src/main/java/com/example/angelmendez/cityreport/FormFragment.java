@@ -1,6 +1,7 @@
 package com.example.angelmendez.cityreport;
 
 import android.Manifest;
+import android.app.Activity;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -20,6 +21,7 @@ import androidx.core.widget.NestedScrollView;
 import androidx.fragment.app.Fragment;
 
 import android.view.MenuItem;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.PopupMenu;
 import android.net.Uri;
 import android.widget.Toast;
@@ -59,6 +61,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.text.DateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 
 import static android.app.Activity.RESULT_CANCELED;
@@ -77,12 +80,13 @@ public class FormFragment extends Fragment implements PopupMenu.OnMenuItemClickL
     String category = "";
     String nearStreet = "";
     LatLng location = null;
-    Bitmap photo = null;
+    ArrayList<Bitmap> photoArray;
     LoadingDialog dialog;
     Marker marker;
     RadioGroup radioGroup;
     EditText descriptionInput;
     NestedScrollView scrollView;
+    RadioButton selected;
 
 
 
@@ -101,6 +105,7 @@ public class FormFragment extends Fragment implements PopupMenu.OnMenuItemClickL
         Button cameraButton = (Button) rootView.findViewById(R.id.add_picture_btn);
         Button submitButton = (Button) rootView.findViewById(R.id.submit_btn);
 
+        photoArray = new ArrayList<>();
         pictureAttached = rootView.findViewById(R.id.picture_attached);
         pictureAttached.setVisibility(View.INVISIBLE);
 
@@ -150,17 +155,46 @@ public class FormFragment extends Fragment implements PopupMenu.OnMenuItemClickL
             }
         });
 
+        descriptionInput.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+            @Override
+            public void onFocusChange(View v, boolean hasFocus) {
+                if (!hasFocus) {
+                    InputMethodManager inputMethodManager =(InputMethodManager)getActivity().getSystemService(Activity.INPUT_METHOD_SERVICE);
+                    inputMethodManager.hideSoftInputFromWindow(v.getWindowToken(), 0);
+                }
+            }
+        });
+
 
         radioGroup = rootView.findViewById(R.id.radioGroup);
+        final ArrayList<RadioButton> radioButtons = new ArrayList<>();
+        radioButtons.add((RadioButton)rootView.findViewById(R.id.category_1));
+        radioButtons.add((RadioButton)rootView.findViewById(R.id.category_2));
+        radioButtons.add((RadioButton)rootView.findViewById(R.id.category_3));
+        radioButtons.add((RadioButton)rootView.findViewById(R.id.category_4));
+
         radioGroup.setOnCheckedChangeListener( new RadioGroup.OnCheckedChangeListener() {
+
                                                   @Override
                                                   public void onCheckedChanged(RadioGroup group, int checkedId) {
+
                                                       RadioButton radioButton = rootView.findViewById(checkedId);
 
                                                       if (radioButton != null && radioButton.isChecked())
                                                       {
+                                                          selected = radioButton;
                                                           category = radioButton.getText().toString();
+                                                          radioButton.setTextColor(getResources().getColor(R.color.white));
+
+                                                          for (int i = 0; i < 4; i++)
+                                                          {
+                                                              if(!(radioButtons.get(i) == radioButton))
+                                                              {
+                                                                  radioButtons.get(i).setTextColor(getResources().getColor(R.color.black));
+                                                              }
+                                                          }
                                                       }
+
                                                   }
                                               }
         );
@@ -196,7 +230,7 @@ public class FormFragment extends Fragment implements PopupMenu.OnMenuItemClickL
          category = "";
          nearStreet = "";
          location = null;
-         photo = null;
+         photoArray = null;
 
          scrollView.scrollTo(0, 0);
          descriptionInput.clearFocus();
@@ -209,10 +243,11 @@ public class FormFragment extends Fragment implements PopupMenu.OnMenuItemClickL
 
     public void saveReport()
     {
-        reportObject = new ReportObject(nearStreet, date, photo, location, description, category);
+        reportObject = new ReportObject(nearStreet, date, photoArray, location, description, category);
         reportObject.saveToFile(getContext());
         Log.d("save", "saveReport: saved");
         radioGroup.clearCheck();
+        selected.setTextColor(getResources().getColor(R.color.black));
         ((MainActivity) getActivity()).loadReportsFragment();
 
 
@@ -237,9 +272,12 @@ public class FormFragment extends Fragment implements PopupMenu.OnMenuItemClickL
             int year = cal.get(Calendar.YEAR); // get the current year
             int month = cal.get(Calendar.MONTH); // month...
             int day = cal.get(Calendar.DAY_OF_MONTH); // current day in the month
+            int hour = cal.get(Calendar.HOUR_OF_DAY);
+            int minute = cal.get(Calendar.MINUTE);
+            String am_pm = cal.get(Calendar.AM_PM) == Calendar.AM ? "AM" : "PM";
 
             // sets your textview to e.g. 2012/03/15 for today
-            date = (month + "/" + day + "/" + year);
+            date = (month + "/" + day + "/" + year + "  at " + hour + ":" + minute + " " + am_pm);
 
             Log.d("TAG", date);
 
@@ -366,13 +404,26 @@ public class FormFragment extends Fragment implements PopupMenu.OnMenuItemClickL
     public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
+        if (photoArray == null)
+        {
+            photoArray = new ArrayList<>();
+        }
         if (resultCode != RESULT_CANCELED) {
             switch (requestCode) {
                 case 0:
                     if (resultCode == RESULT_OK && data != null) {
                         Bitmap selectedImage = (Bitmap) data.getExtras().get("data");
-                        photo = selectedImage;
+                        photoArray.add(selectedImage);
                         pictureAttached.setVisibility(View.VISIBLE);
+                    }
+
+                    if (photoArray.size() == 1)
+                    {
+                        pictureAttached.setText("1 Picture Attached");
+                    }
+                    else
+                    {
+                        pictureAttached.setText(photoArray.size() + " Pictures Attached");
                     }
 
                     break;
@@ -390,7 +441,15 @@ public class FormFragment extends Fragment implements PopupMenu.OnMenuItemClickL
                                 String picturePath = cursor.getString(columnIndex);
                                 cursor.close();
 
-                                photo = BitmapFactory.decodeFile(picturePath);
+                                photoArray.add(BitmapFactory.decodeFile(picturePath));
+                                if (photoArray.size() == 1)
+                                {
+                                    pictureAttached.setText("1 Picture Attached");
+                                }
+                                else
+                                {
+                                    pictureAttached.setText(photoArray.size() + " Picture Attached");
+                                }
                                 pictureAttached.setVisibility(View.VISIBLE);
                             }
                         }
@@ -401,7 +460,7 @@ public class FormFragment extends Fragment implements PopupMenu.OnMenuItemClickL
         }
     }
 
-//        photo = (Bitmap)data.getExtras().get("data");
+//        photoArray = (Bitmap)data.getExtras().get("data");
 //
 //        //imageView.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 //

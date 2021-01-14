@@ -25,7 +25,9 @@
             android:layout_marginHorizontal="10dp"
             app:cardBackgroundColor="#fff"
             app:cardCornerRadius="16dp"
-            app:cardElevation="10dp">
+            app:cardElevation="10dp"
+            android:clickable="true"
+            android:focusableInTouchMode="true" >
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -55,34 +57,33 @@
                     android:id="@+id/frameLayout"
                     android:layout_width="match_parent"
                     android:layout_height="200dp"
+                    android:onClick="mapClick"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="parent"
-                    android:onClick="mapClick">
+                    app:layout_constraintTop_toTopOf="parent">
 
                     <com.google.android.gms.maps.MapView
                         android:id="@+id/map"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:layout_margin="1dp"
-                        tools:ignore="DuplicateIds"
-                        android:onClick="mapClick"/>
+                        android:onClick="mapClick"
+                        tools:ignore="DuplicateIds" />
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:background="@drawable/map_background"
-                        android:orientation="vertical" >
-                    </LinearLayout>
+                        android:orientation="vertical"></LinearLayout>
                 </FrameLayout>
 
                 <Button
                     android:id="@+id/change_location_btn"
                     android:layout_width="175dp"
-                    android:height="30dp"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
                     android:layout_marginVertical="10dp"
+                    android:height="30dp"
                     android:background="@drawable/submit_background"
                     android:fontFamily="sans-serif-medium"
                     android:onClick="changeLocationStart"
@@ -97,83 +98,22 @@
                     android:layout_marginTop="8dp"
                     android:layout_marginEnd="8dp"
                     android:fontFamily="sans-serif"
-                    android:text="Category"
+                    android:text="Category:"
                     android:textColor="#000"
                     android:textSize="24sp"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toTopOf="parent" />
 
-                <!--                <RadioGroup-->
-                <!--                    android:layout_width="wrap_content"-->
-                <!--                    android:layout_height="wrap_content"-->
-                <!--                    android:layout_marginStart="8dp"-->
-                <!--                    android:layout_marginTop="8dp"-->
-                <!--                    android:layout_marginEnd="8dp">-->
-
-                <!--                    <RadioButton-->
-                <!--                        android:id="@+id/coupons"-->
-                <!--                        android:layout_width="wrap_content"-->
-                <!--                        android:layout_height="wrap_content"-->
-                <!--                        android:layout_marginTop="5dp"-->
-                <!--                        android:layout_weight="1"-->
-                <!--                        android:buttonTint="#000000"-->
-                <!--                        android:fontFamily="sans-serif"-->
-                <!--                        android:paddingLeft="10dp"-->
-                <!--                        android:text="Physical Damage"-->
-                <!--                        android:textAppearance="@style/TextAppearance.AppCompat.Medium"-->
-                <!--                        android:textColor="#000"-->
-                <!--                        android:textSize="20dp" />-->
-
-                <!--                    <RadioButton-->
-                <!--                        android:id="@+id/deals"-->
-                <!--                        android:layout_width="wrap_content"-->
-                <!--                        android:layout_height="wrap_content"-->
-                <!--                        android:layout_marginTop="10dp"-->
-                <!--                        android:layout_weight="1"-->
-                <!--                        android:buttonTint="#000000"-->
-                <!--                        android:fontFamily="sans-serif"-->
-                <!--                        android:paddingLeft="10dp"-->
-                <!--                        android:text="Pedestrian Danger"-->
-                <!--                        android:textColor="#000"-->
-                <!--                        android:textSize="20dp" />-->
-
-                <!--                    <RadioButton-->
-                <!--                        android:id="@+id/cashback"-->
-                <!--                        android:layout_width="wrap_content"-->
-                <!--                        android:layout_height="wrap_content"-->
-                <!--                        android:layout_marginTop="10dp"-->
-                <!--                        android:layout_weight="1"-->
-                <!--                        android:buttonTint="#000000"-->
-                <!--                        android:fontFamily="sans-serif"-->
-                <!--                        android:paddingLeft="10dp"-->
-                <!--                        android:text="Traffic Danger"-->
-                <!--                        android:textColor="#000"-->
-                <!--                        android:textSize="20dp" />-->
-
-                <!--                    <RadioButton-->
-                <!--                        android:id="@+id/other"-->
-                <!--                        android:layout_width="wrap_content"-->
-                <!--                        android:layout_height="wrap_content"-->
-                <!--                        android:layout_marginTop="10dp"-->
-                <!--                        android:layout_weight="1"-->
-                <!--                        android:buttonTint="#000000"-->
-                <!--                        android:fontFamily="sans-serif"-->
-                <!--                        android:paddingLeft="10dp"-->
-                <!--                        android:text="Public Insecurity"-->
-                <!--                        android:textColor="#000"-->
-                <!--                        android:textSize="20dp" />-->
-                <!--                </RadioGroup>-->
 
                 <RadioGroup
                     android:id="@+id/radioGroup"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_gravity="center"
                     android:layout_marginTop="5dp"
                     android:orientation="vertical"
-                    android:layout_gravity="center"
-                    android:padding="0dp"
-                    >
+                    android:padding="0dp">
 
 
                     <androidx.appcompat.widget.AppCompatRadioButton
@@ -189,7 +129,11 @@
                         android:button="@android:color/transparent"
                         android:stateListAnimator="@animator/anim_test"
                         android:text="Traffic Danger"
-                        android:textAlignment="center" />
+                        android:textAlignment="center"
+                        android:textColor="#000"
+                        android:padding="16dp"
+                        android:drawablePadding="0dp"
+                        android:drawableLeft="@drawable/icon_crash_selector"/>
 
                     <androidx.appcompat.widget.AppCompatRadioButton
                         android:id="@+id/category_2"
@@ -202,8 +146,11 @@
                         android:background="@drawable/selector"
                         android:button="@android:color/transparent"
                         android:stateListAnimator="@animator/anim_test"
-                        android:text="Pedestrian Danger"
-                        android:textAlignment="center" />
+                        android:text="Suspicious Activity"
+                        android:textAlignment="center"
+                        android:textColor="#000"
+                        android:padding="15dp"
+                        android:drawableLeft="@drawable/icon_car_selector"/>
 
                     <androidx.appcompat.widget.AppCompatRadioButton
                         android:id="@+id/category_3"
@@ -217,7 +164,10 @@
                         android:button="@android:color/transparent"
                         android:stateListAnimator="@animator/anim_test"
                         android:text="Physical Damage"
-                        android:textAlignment="center" />
+                        android:textAlignment="center"
+                        android:textColor="#000"
+                        android:padding="16dp"
+                        android:drawableLeft="@drawable/icon_light_selector"/>
 
                     <androidx.appcompat.widget.AppCompatRadioButton
                         android:id="@+id/category_4"
@@ -230,10 +180,11 @@
                         android:background="@drawable/selector"
                         android:button="@android:color/transparent"
                         android:stateListAnimator="@animator/anim_test"
-                        android:text="Suspicious Activity"
-                        android:textAlignment="center"/>
-
-
+                        android:text="Pedestrian Danger"
+                        android:textAlignment="center"
+                        android:textColor="#000"
+                        android:padding="16dp"
+                        android:drawableLeft="@drawable/icon_person_selector"/>
 
 
                 </RadioGroup>
@@ -247,7 +198,7 @@
                     android:layout_marginTop="16dp"
                     android:layout_marginEnd="8dp"
                     android:fontFamily="sans-serif"
-                    android:text="Description"
+                    android:text="Description:"
                     android:textColor="#000"
                     android:textSize="24sp"
                     app:layout_constraintEnd_toEndOf="parent"

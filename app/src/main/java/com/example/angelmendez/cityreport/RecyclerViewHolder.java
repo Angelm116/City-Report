@@ -15,15 +15,18 @@ public class RecyclerViewHolder extends RecyclerView.ViewHolder {
     public TextView dateText;
     public ImageView photo;
     public ImageButton shareButton;
+    public View view;
 
     public RecyclerViewHolder(@NonNull View itemView) {
         super(itemView);
 
+        view = itemView;
         nearStreetText = itemView.findViewById(R.id.street_text);
         dateText = itemView.findViewById(R.id.date_text);
         photo = itemView.findViewById(R.id.imageView);
         shareButton = itemView.findViewById(R.id.shareButton);
     }
+
 
 }
 

@@ -57,7 +57,7 @@ public class ReportsFragment extends Fragment {
         recyclerView.setHasFixedSize(true);
         recyclerView.setLayoutManager(new LinearLayoutManager(view.getContext()));
 
-        adapter = new ListAdapter(reportObject);
+        adapter = new ListAdapter(reportObject, getContext());
         recyclerView.setAdapter(adapter);
         recyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
        // getReports();

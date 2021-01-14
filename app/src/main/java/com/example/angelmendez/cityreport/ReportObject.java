@@ -3,6 +3,7 @@ package com.example.angelmendez.cityreport;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.util.Log;
 
 import com.google.android.gms.maps.model.LatLng;
 
@@ -15,26 +16,27 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.text.DateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Random;
 
 public class ReportObject implements Serializable {
     private String nearStreet;
     private String date;
-    private  transient Bitmap photo;
+    private  transient ArrayList<Bitmap> photoArray;
     private transient LatLng location;
     private String description;
     private String category;
     private String fileName;
     private double lat;
     private double lng;
-    private String photoFileName;
+    private String photoDirectoryName;
 
-    public ReportObject(String street, String date, Bitmap photo, LatLng location, String description, String category)
+    public ReportObject(String street, String date, ArrayList<Bitmap> photoArray, LatLng location, String description, String category)
     {
         this.nearStreet = street;
         this.date = date;
-        this.photo = photo;
+        this.photoArray = photoArray;
         this.location = location;
         this.description = description;
         this.category = category;
@@ -42,9 +44,9 @@ public class ReportObject implements Serializable {
         lat = location.latitude;
         lng = location.longitude;
 
-//        if(photo != null)
+//        if(photoArray != null)
 //        {
-//            photo.compress(Bitmap.CompressFormat.PNG, 100, stream);
+//            photoArray.compress(Bitmap.CompressFormat.PNG, 100, stream);
 //        }
     }
 
@@ -56,17 +58,34 @@ public class ReportObject implements Serializable {
     public static String generateFileName() {
         Random generator = new Random();
         StringBuilder randomStringBuilder = new StringBuilder();
-        int randomLength = generator.nextInt(5);
+        //int randomLength = generator.nextInt(5);
+        int randomLength = 6;
         char tempChar;
+        int holder;
         for (int i = 0; i < randomLength; i++){
-            tempChar = (char) (generator.nextInt(96) + 32);
+
+            holder = generator.nextInt(3);
+
+            if (holder == 0)
+            {
+                tempChar = (char) (generator.nextInt(26) + 65);
+            }
+            else if (holder == 1)
+            {
+                tempChar = (char) (generator.nextInt(26) + 97);
+            }
+            else
+            {
+                tempChar = (char) (generator.nextInt(10) + 48);
+            }
+
             randomStringBuilder.append(tempChar);
         }
         return randomStringBuilder.toString();
     }
 
-    public Bitmap getPhoto() {
-        return photo;
+    public ArrayList<Bitmap> getPhotoArray() {
+        return photoArray;
     }
 
     public String getDate() {
@@ -89,8 +108,8 @@ public class ReportObject implements Serializable {
         this.date = date;
     }
 
-    public void setPhoto(Bitmap photo) {
-        this.photo = photo;
+    public void setPhotoArray(ArrayList<Bitmap> photoArray) {
+        this.photoArray = photoArray;
     }
 
     public void setLocation(LatLng location) {
@@ -113,23 +132,45 @@ public class ReportObject implements Serializable {
         this.category = category;
     }
 
-    public String getPhotoFileName() {
-        return photoFileName;
+    public String getPhotoDirName() {
+        return photoDirectoryName;
     }
 
     public void saveToFile(Context context) {
 
-        if (photo != null) {
-            photoFileName = generateFileName();
-            String dirPathPhoto = context.getFilesDir().getAbsolutePath() + File.separator + "ReportsDir" + File.separator + "ReportPhotos" + File.separator + photoFileName;
-            File filePhoto = new File(dirPathPhoto);
+        if (photoArray != null) {
+
+            // make directory of photos for this particular report
+            photoDirectoryName = generateFileName() + "_DIR";
+            String dirPath = context.getFilesDir().getAbsolutePath() + File.separator + "ReportsDir" + File.separator + "ReportPhotos" + File.separator + photoDirectoryName;
+            File reportPhotoDir = new File(dirPath);
+            if (!reportPhotoDir.exists()) {
+                reportPhotoDir.mkdirs();
+
+            }
+
+
+            
+            //photoDirectoryName = generateFileName() + ".jpg";
+            //String photoDirPath = context.getFilesDir().getAbsolutePath() + File.separator + "ReportsDir" + File.separator + "ReportPhotos" + File.separator + photoDirectoryName;
+            
+            
+            
+            File filePhoto;
             FileOutputStream fos = null;
+
+           
             try {
-                fos = new FileOutputStream(filePhoto);
+                for(int i = 0; i < photoArray.size(); i++)
+                {
+                    filePhoto = new File(dirPath + File.separator + generateFileName() + ".jpg");
+                    fos = new FileOutputStream(filePhoto);
+                    photoArray.get(i).compress(Bitmap.CompressFormat.JPEG, 90, fos);
+                }
             } catch (FileNotFoundException e) {
                 e.printStackTrace();
             }
-            photo.compress(Bitmap.CompressFormat.PNG, 90, fos);
+
             try {
                 fos.close();
             } catch (IOException e) {
@@ -138,7 +179,7 @@ public class ReportObject implements Serializable {
         }
         else
         {
-            photoFileName = null;
+            photoDirectoryName = null;
         }
 
         try {
@@ -173,12 +214,20 @@ public class ReportObject implements Serializable {
             e.printStackTrace();
         }
 
-        if (reportObject.getPhotoFileName() != null) {
-            String dirPathPhoto = context.getFilesDir().getAbsolutePath() + File.separator + "ReportsDir" + File.separator + "ReportPhotos" + File.separator + reportObject.getPhotoFileName();
-            File filePhoto = new File(dirPathPhoto);
+        if (reportObject.getPhotoDirName() != null) {
+
+            ArrayList<Bitmap> photos = new ArrayList<>();
+            String photoDirPath = context.getFilesDir().getAbsolutePath() + File.separator + "ReportsDir" + File.separator + "ReportPhotos" + File.separator + reportObject.getPhotoDirName();
+            File photoDir  = new File(photoDirPath);
+            File[] photoFiles = photoDir.listFiles();
             try {
-                Bitmap bitmap = BitmapFactory.decodeStream(new FileInputStream(filePhoto));
-                reportObject.setPhoto(bitmap);
+
+                for (int i = 0; i < photoFiles.length; i++)
+                {
+                    photos.add(BitmapFactory.decodeStream(new FileInputStream(photoFiles[i])));
+                }
+                reportObject.setPhotoArray(photos);
+
             } catch (FileNotFoundException e) {
                 e.printStackTrace();
             }

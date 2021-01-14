@@ -14,7 +14,7 @@
     <androidx.cardview.widget.CardView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:minHeight="100dp"
+        android:minHeight="110dp"
         android:layout_gravity="center"
         android:backgroundTint="#FFFFFF"
         app:cardCornerRadius="20dp">
@@ -29,13 +29,14 @@
             <FrameLayout
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:layout_gravity="center">
+                android:layout_weight="1.2"
+                android:layout_gravity="center"
+                android:padding="0dp">
 
                 <androidx.appcompat.widget.AppCompatImageView
                     android:id="@+id/imageView"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
+                    android:layout_width="80dp"
+                    android:layout_height="100dp"
                     android:layout_gravity="center"
                     android:padding="6dp"
                     android:scaleType="centerCrop"
@@ -43,9 +44,10 @@
                     tools:srcCompat="@tools:sample/avatars" />
 
                 <ImageView
-                    android:src="@drawable/frame"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent" />
+                    android:layout_width="80dp"
+                    android:layout_height="100dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/frame" />
 
             </FrameLayout>
 
@@ -60,15 +62,17 @@
             <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
-                android:layout_weight="2.8"
+                android:layout_weight="3.3"
                 android:orientation="vertical"
-                android:padding="10dp">
+                android:paddingVertical="7dp"
+                android:paddingLeft="7dp">
+
 
                 <TextView
                     android:id="@+id/street_text"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
+                    android:layout_weight="2"
                     android:text="Near University Plaza Dr."
                     android:textColor="#000"
                     android:textSize="18sp" />
@@ -81,7 +85,7 @@
                     android:layout_weight="1"
                     android:text="On 10/07/2020"
                     android:textColor="#000"
-                    android:textSize="18sp" />
+                    android:textSize="14sp" />
 
             </LinearLayout>
 
@@ -96,10 +100,10 @@
 
             <androidx.appcompat.widget.AppCompatImageButton
                 android:id="@+id/shareButton"
-                android:layout_width="0dp"
+                android:layout_width="3dp"
                 android:layout_height="match_parent"
                 android:layout_gravity="center"
-                android:layout_weight=".7"
+                android:layout_weight=".3"
                 android:background="@android:color/white"
                 app:srcCompat="@drawable/ic_action_share" />
 
