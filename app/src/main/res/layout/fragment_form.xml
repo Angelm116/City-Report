@@ -179,12 +179,13 @@
                         android:layout_weight="1"
                         android:background="@drawable/selector"
                         android:button="@android:color/transparent"
+                        android:drawableLeft="@drawable/icon_person_selector"
+                        android:padding="7dp"
                         android:stateListAnimator="@animator/anim_test"
-                        android:text="Pedestrian Danger"
+                        android:text="Pedestrian/Bike Danger"
                         android:textAlignment="center"
                         android:textColor="#000"
-                        android:padding="16dp"
-                        android:drawableLeft="@drawable/icon_person_selector"/>
+                        android:textSize="14sp" />
 
 
                 </RadioGroup>
@@ -250,7 +251,27 @@
                         android:textSize="14sp" />
 
                 </LinearLayout>
+
+
+                <GridLayout
+                    android:id="@+id/grid"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:columnCount="3"
+                    android:layout_gravity="center_horizontal"
+                    android:columnOrderPreserved="true"
+                    android:orientation="horizontal"
+
+                    android:useDefaultMargins="false">
+
+
+
+
+                </GridLayout>
+
+
             </LinearLayout>
+
         </androidx.cardview.widget.CardView>
 
         <Button
@@ -267,4 +288,5 @@
 
 
     </LinearLayout>
+
 </androidx.core.widget.NestedScrollView>

@@ -20,8 +20,11 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.widget.NestedScrollView;
 import androidx.fragment.app.Fragment;
 
+import android.util.DisplayMetrics;
 import android.view.MenuItem;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.GridLayout;
+import android.widget.ImageView;
 import android.widget.PopupMenu;
 import android.net.Uri;
 import android.widget.Toast;
@@ -87,6 +90,7 @@ public class FormFragment extends Fragment implements PopupMenu.OnMenuItemClickL
     EditText descriptionInput;
     NestedScrollView scrollView;
     RadioButton selected;
+    GridLayout grid;
 
 
 
@@ -101,6 +105,8 @@ public class FormFragment extends Fragment implements PopupMenu.OnMenuItemClickL
         scrollView = rootView.findViewById(R.id.scrollFeed);
 
         dialog = new LoadingDialog(getActivity());
+
+        grid = rootView.findViewById(R.id.grid);
 
         Button cameraButton = (Button) rootView.findViewById(R.id.add_picture_btn);
         Button submitButton = (Button) rootView.findViewById(R.id.submit_btn);
@@ -235,14 +241,25 @@ public class FormFragment extends Fragment implements PopupMenu.OnMenuItemClickL
          scrollView.scrollTo(0, 0);
          descriptionInput.clearFocus();
          descriptionInput.setText("");
-
+         grid.removeAllViews();
         pictureAttached.setVisibility(View.INVISIBLE);
          updateMap(((MainActivity) getActivity()).getLatLng());
     }
 
+    public boolean checkForm(){
+        if (selected == null)
+        {
+            Toast.makeText(getActivity(), "Must Select a Category",
+                    Toast.LENGTH_LONG).show();
+            return false;
+        }
+        return true;
+    }
 
     public void saveReport()
     {
+        if (checkForm())
+       {
         reportObject = new ReportObject(nearStreet, date, photoArray, location, description, category);
         reportObject.saveToFile(getContext());
         Log.d("save", "saveReport: saved");
@@ -250,7 +267,7 @@ public class FormFragment extends Fragment implements PopupMenu.OnMenuItemClickL
         selected.setTextColor(getResources().getColor(R.color.black));
         ((MainActivity) getActivity()).loadReportsFragment();
 
-
+        }
 
 
     }
@@ -270,14 +287,20 @@ public class FormFragment extends Fragment implements PopupMenu.OnMenuItemClickL
 
             Calendar cal = Calendar.getInstance();
             int year = cal.get(Calendar.YEAR); // get the current year
-            int month = cal.get(Calendar.MONTH); // month...
+            int month = cal.get(Calendar.MONTH) + 1; // month...
             int day = cal.get(Calendar.DAY_OF_MONTH); // current day in the month
             int hour = cal.get(Calendar.HOUR_OF_DAY);
             int minute = cal.get(Calendar.MINUTE);
             String am_pm = cal.get(Calendar.AM_PM) == Calendar.AM ? "AM" : "PM";
 
             // sets your textview to e.g. 2012/03/15 for today
-            date = (month + "/" + day + "/" + year + "  at " + hour + ":" + minute + " " + am_pm);
+
+            String monthS = month < 10 ? ("0" + month) : ("" + month);
+            String dayS = day < 10 ? ("0" + day) : ("" + day);
+            String hourS = hour < 10 ? ("0" + hour) : ("" + hour);
+            String minuteS = minute < 10 ? ("0" + minute) : ("" + minute);
+
+            date = (monthS + "/" + dayS + "/" + year + "  at " + hourS + ":" + minuteS + " " + am_pm);
 
             Log.d("TAG", date);
 
@@ -400,9 +423,17 @@ public class FormFragment extends Fragment implements PopupMenu.OnMenuItemClickL
         }
     }
 
+    private int dpToPixel(float dp) {
+        DisplayMetrics metrics = this.getResources().getDisplayMetrics();
+        int px = (int)(dp * (metrics.densityDpi/160f));
+        return px;
+    }
+
     @Override
     public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+
+        int gridPosition = 0;
 
         if (photoArray == null)
         {
@@ -457,6 +488,28 @@ public class FormFragment extends Fragment implements PopupMenu.OnMenuItemClickL
                     }
                     break;
             }
+
+            // update grid
+
+            ImageView image = new ImageView(getContext());
+            image.setImageBitmap(photoArray.get(photoArray.size() - 1));
+
+
+            //GridLayout.LayoutParams layoutParams = new GridLayout.LayoutParams(GridLayout.spec(1), GridLayout.spec(1) );
+
+
+            GridLayout.LayoutParams layoutParams = new GridLayout.LayoutParams(new ViewGroup.LayoutParams(dpToPixel(80), dpToPixel(100)));
+            layoutParams.setMargins(dpToPixel(3), dpToPixel(3), dpToPixel(3), dpToPixel(3));
+            image.setLayoutParams(layoutParams);
+            grid.addView(image);
+
+//            gridPosition = grid.getChildCount();
+//
+//            for (int i = gridPosition; i <= photoArray.size(); i++)
+//            {
+//
+//            }
+
         }
     }
 

@@ -71,6 +71,15 @@ public class ReportsFragment extends Fragment {
         Log.d("updateReports", "updateReports: " + reports.size());
         adapter.setData(reports);
         adapter.notifyDataSetChanged();
+
+        recyclerView.post(new Runnable() {
+            @Override
+            public void run() {
+                recyclerView.smoothScrollToPosition(adapter.getItemCount() - 1);
+                // Here adapter.getItemCount()== child count
+            }
+        });
+
     }
 
 
