@@ -75,7 +75,10 @@ public class ReportsFragment extends Fragment {
         recyclerView.post(new Runnable() {
             @Override
             public void run() {
-                recyclerView.smoothScrollToPosition(adapter.getItemCount() - 1);
+
+                if (adapter.getItemCount() > 0) {
+                    recyclerView.smoothScrollToPosition(adapter.getItemCount() - 1);
+                }
                 // Here adapter.getItemCount()== child count
             }
         });

@@ -63,6 +63,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.IOException;
 import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -71,7 +72,7 @@ import static android.app.Activity.RESULT_CANCELED;
 import static android.app.Activity.RESULT_OK;
 
 
-public class FormFragment extends Fragment implements PopupMenu.OnMenuItemClickListener{
+public class FormFragment extends Fragment implements PopupMenu.OnMenuItemClickListener, BackPressSupport{
 
     MapView mMapView;
     private GoogleMap googleMap;
@@ -227,6 +228,13 @@ public class FormFragment extends Fragment implements PopupMenu.OnMenuItemClickL
         });
 
         return rootView;
+    }
+
+    public boolean onBackPressed() {
+        radioGroup.clearCheck();
+        selected.setTextColor(getResources().getColor(R.color.black));
+        ((MainActivity) getActivity()).loadReportsFragment();
+        return true;
     }
 
     public void resetForm()
@@ -441,7 +449,7 @@ public class FormFragment extends Fragment implements PopupMenu.OnMenuItemClickL
         }
         if (resultCode != RESULT_CANCELED) {
             switch (requestCode) {
-                case 0:
+                case 0:  // from camera
                     if (resultCode == RESULT_OK && data != null) {
                         Bitmap selectedImage = (Bitmap) data.getExtras().get("data");
                         photoArray.add(selectedImage);
@@ -458,7 +466,7 @@ public class FormFragment extends Fragment implements PopupMenu.OnMenuItemClickL
                     }
 
                     break;
-                case 1:
+                case 1: // from gallery
                     if (resultCode == RESULT_OK && data != null) {
                         Uri selectedImage = data.getData();
                         String[] filePathColumn = {MediaStore.Images.Media.DATA};
@@ -472,7 +480,14 @@ public class FormFragment extends Fragment implements PopupMenu.OnMenuItemClickL
                                 String picturePath = cursor.getString(columnIndex);
                                 cursor.close();
 
-                                photoArray.add(BitmapFactory.decodeFile(picturePath));
+                                //photoArray.add(BitmapFactory.decodeFile(picturePath));
+
+                                try {
+                                    photoArray.add(MediaStore.Images.Media.getBitmap(getActivity().getContentResolver(), selectedImage));
+                                } catch (IOException e) {
+
+                                }
+
                                 if (photoArray.size() == 1)
                                 {
                                     pictureAttached.setText("1 Picture Attached");

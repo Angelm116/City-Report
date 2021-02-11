@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "73466075651",
+    "project_id": "cityreport-271104",
+    "storage_bucket": "cityreport-271104.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:73466075651:android:d5c7c742f32993ebc1cc36",
+        "android_client_info": {
+          "package_name": "com.example.angelmendez.cityreport"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "73466075651-89i4oc8shbhirck9m2f2jfil23ppigtm.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAPMqcoU7LIBE860rji50WM1KMysxXERcQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "73466075651-89i4oc8shbhirck9m2f2jfil23ppigtm.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

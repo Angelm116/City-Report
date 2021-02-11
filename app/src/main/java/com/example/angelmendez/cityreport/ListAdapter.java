@@ -8,6 +8,7 @@ import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.text.Html;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -106,6 +107,20 @@ public class ListAdapter extends RecyclerView.Adapter<RecyclerViewHolder> {
         File photoDir  = new File(path);
         File[] photoFiles = photoDir.listFiles();
 
+        // location
+        String uri = "http://maps.google.com/maps?saddr=" + dataSet.get(position).getLocation().latitude +","+ dataSet.get(position).getLocation().longitude;
+
+        // category
+       // String category = "Report of type: " + dataSet.get(position).getCategory() + " in this location";
+        String category = dataSet.get(position).getCategory();
+
+        //description
+        String description = dataSet.get(position).getDescription();
+        String descriptionMessage = (description == "" ? "" : ( "Description: \n" + description));
+
+        String message = "Hey, I wanted to make you aware of this issue: " + "\n\n" + "Report Type: " + category + "\n\n" + descriptionMessage + "\n\n" + "Location: \n" + uri;
+        Intent shareIntent;
+
         if (photoFiles != null)
         {
             imageUris = new ArrayList<Uri>();
@@ -114,20 +129,20 @@ public class ListAdapter extends RecyclerView.Adapter<RecyclerViewHolder> {
             {
                 imageUris.add(FileProvider.getUriForFile(v.getContext(), "com.mydomain.fileprovider", photoFiles[i]));
             }
+
+            shareIntent = new Intent(Intent.ACTION_SEND_MULTIPLE);
+            shareIntent.setType("image/jpeg");
+            shareIntent.putParcelableArrayListExtra(Intent.EXTRA_STREAM, imageUris);
+            shareIntent.putExtra(Intent.EXTRA_SUBJECT, "I wanted to share this with you!");
+            shareIntent.putExtra(Intent.EXTRA_TEXT, message);
         }
-
-        // location
-        String uri = "http://maps.google.com/maps?saddr=" + dataSet.get(position).getLocation().latitude +","+ dataSet.get(position).getLocation().longitude;
-
-        // category
-        String ShareSub = "Report of type: " + dataSet.get(position).getCategory() + " in this location";
-
-
-        Intent shareIntent = new Intent(Intent.ACTION_SEND_MULTIPLE);
-        shareIntent.setType("image/jpeg");
-        shareIntent.putParcelableArrayListExtra(Intent.EXTRA_STREAM, imageUris);
-        shareIntent.putExtra(Intent.EXTRA_SUBJECT, ShareSub);
-        shareIntent.putExtra(Intent.EXTRA_TEXT, "This is the location: " + uri);
+        else
+        {
+            shareIntent = new Intent(Intent.ACTION_SEND);
+            shareIntent.setType("text/html");
+            shareIntent.putExtra(Intent.EXTRA_TEXT, message);
+            shareIntent.putExtra(Intent.EXTRA_SUBJECT, "I wanted to share this with you!");
+        }
 
         v.getContext().startActivity(Intent.createChooser(shareIntent, "Share via"));
 

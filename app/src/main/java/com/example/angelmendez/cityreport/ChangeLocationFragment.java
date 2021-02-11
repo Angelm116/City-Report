@@ -21,7 +21,7 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 
-public class ChangeLocationFragment extends Fragment implements OnMapReadyCallback {
+public class ChangeLocationFragment extends Fragment implements OnMapReadyCallback, BackPressSupport {
 
 
     private GoogleMap mMap;
@@ -60,6 +60,12 @@ public class ChangeLocationFragment extends Fragment implements OnMapReadyCallba
 
 
         return mView;
+    }
+
+    public boolean onBackPressed() {
+        marker.remove();
+        ((MainActivity)getActivity()).changeLocationEnd(locationOut);
+        return true;
     }
 
 

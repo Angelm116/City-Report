@@ -140,6 +140,18 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     }
 
+    @Override
+    public void onBackPressed() {
+
+        BackPressSupport fragmentPressed = (BackPressSupport)currentFragment;
+        if(fragmentPressed.onBackPressed() == false)
+        {
+            super.onBackPressed();
+        }
+
+
+    }
+
     public void startNewReport()
     {
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
@@ -150,6 +162,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         fragmentTransaction.hide(reportsFragment);
         fragmentTransaction.show(formFragment);
         fragmentTransaction.commit();
+        currentFragment = formFragment;
     }
 
     public void getReports()
@@ -191,6 +204,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         fragmentTransaction.show(reportsFragment);
         fragmentTransaction.commit();
+        currentFragment = reportsFragment;
 
     }
 
@@ -201,7 +215,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         fragmentTransaction.hide(formFragment);
         fragmentTransaction.show(changeLocationFragment);
         fragmentTransaction.commit();
-
+        currentFragment = changeLocationFragment;
         changeLocationFragment.updateMap(latLng);
     }
 
@@ -221,7 +235,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         fragmentTransaction.hide(changeLocationFragment);
         fragmentTransaction.show(formFragment);
         fragmentTransaction.commit();
-
+        currentFragment = formFragment;
         formFragment.updateMap(location);
 
     }
@@ -298,6 +312,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 fragmentTransaction.hide(formFragment);
                 fragmentTransaction.show(reportsFragment);
                 fragmentTransaction.commit();
+                currentFragment = reportsFragment;
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
