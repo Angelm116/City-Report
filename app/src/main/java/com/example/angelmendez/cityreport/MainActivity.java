@@ -30,7 +30,6 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 
 import java.io.File;
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 
 import static com.google.android.gms.location.LocationServices.getFusedLocationProviderClient;
@@ -110,7 +109,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         String[] files = this.fileList();
 
-        getReports();
+        loadReportsFromFiles();
 
         fragmentManager = getSupportFragmentManager();
         formFragment = new FormFragment();
@@ -140,15 +139,30 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     }
 
-    @Override
-    public void onBackPressed() {
 
-        BackPressSupport fragmentPressed = (BackPressSupport)currentFragment;
-        if(fragmentPressed.onBackPressed() == false)
+    public void loadReportsFromFiles()
+    {
+        Log.d("Method", "entering MainActivity: getReports");
+        String dirPath = this.getFilesDir().getAbsolutePath() + File.separator + "ReportsDir" + File.separator + "Reports";
+        File directory = new File(dirPath);
+        File[] files = directory.listFiles();
+
+        if (files == null)
         {
-            super.onBackPressed();
+            return;
         }
 
+        Log.d("Method", "getReports, files size: "+ files.length);
+        dataSet = new ArrayList<>();
+        for (int i = 0; i < files.length; i++)
+        {
+            dataSet.add(ReportObject.readFromFile(this, files[i].getName()));
+            dataSet.get(i).fixLocation();
+            Log.d("Method", "getReports, FileName:" + files[i].getName());
+            //Log.d("save", dataSet.get(i).getDate());
+        }
+
+        Log.d("Method", " out MainActivity: getReports");
 
     }
 
@@ -165,46 +179,56 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         currentFragment = formFragment;
     }
 
-    public void getReports()
+    public void updateReport(ReportObject report)
     {
+        // go to form fragment
+        // populate it with report info
 
-        String dirPath = this.getFilesDir().getAbsolutePath() + File.separator + "ReportsDir" + File.separator + "Reports";
-        File directory = new File(dirPath);
-        File[] files = directory.listFiles();
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        getSupportActionBar().setDisplayShowHomeEnabled(true);
+        title.setText("Update Report");
+        formFragment.resetForm();
+        formFragment.populateForm(report);
+        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+        fragmentTransaction.hide(reportsFragment);
+        fragmentTransaction.show(formFragment);
+        fragmentTransaction.commit();
+        currentFragment = formFragment;
 
-        if (files == null)
-        {
-            return;
-        }
-
-        Log.d("Files", "Size: "+ files.length);
-        dataSet = new ArrayList<>();
-        for (int i = 0; i < files.length; i++)
-        {
-            dataSet.add(ReportObject.readFromFile(this, files[i].getName()));
-            dataSet.get(i).fixLocation();
-            Log.d("Files", "FileName:" + files[i].getName());
-            Log.d("save", dataSet.get(i).getDate());
-        }
-
-        Log.d("TAG", dataSet.size() + "");
 
     }
 
+    public boolean deleteReport(ReportObject report)
+    {
+        // delete directory of the report form
+        // delete directory of the photos of the report
+        // delete directory from dataset
+        // update recyrclerview
+
+        ReportObject.deleteReportFiles(this, report);
+        dataSet.remove(report);
+        reportsFragment.updateReportsList(dataSet);
+        return true;
+    }
+
+
     public void loadReportsFragment(){
 
+        Log.d("Method", " on MainActivity: loadReportsFragment");
         getSupportActionBar().setDisplayHomeAsUpEnabled(false);
         getSupportActionBar().show();
         title.setText("Reports");
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
         fragmentTransaction.hide(formFragment);
 
-        getReports();
-        reportsFragment.updateReports(dataSet);
+        loadReportsFromFiles();
+        reportsFragment.updateReportsList(dataSet);
 
         fragmentTransaction.show(reportsFragment);
         fragmentTransaction.commit();
         currentFragment = reportsFragment;
+
+        Log.d("Method", " out MainActivity: loadReportsFragment");
 
     }
 
@@ -219,15 +243,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         changeLocationFragment.updateMap(latLng);
     }
 
-    public void setLocationHolder(LatLng location)
-    {
-        locationHolder = location;
-    }
-
-    public LatLng getLocationHolder() {
-        return locationHolder;
-    }
-
     public void changeLocationEnd(LatLng location){
 
         getSupportActionBar().show();
@@ -240,6 +255,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     }
 
+
     @Override
     public void onMapReady(GoogleMap googleMap) {
 
@@ -247,17 +263,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     public void getLastLocation() {
 
-
-        //getLocationPermission();
         // Get last known recent location using new Google Play Services SDK (v11+)
         FusedLocationProviderClient locationClient = getFusedLocationProviderClient(this);
 
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
                 && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
 
-            Log.d("PERMISSION", "getLastLocation: PERMISSION NOT GRANTED ");
-
-          //  return;
         }
 
         try {
@@ -301,6 +312,23 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     }
 
+    public void setLocationHolder(LatLng location)
+    {
+        locationHolder = location;
+    }
+
+    public LatLng getLocationHolder() {
+        return locationHolder;
+    }
+
+    public LatLng getLatLng() {
+
+
+        return latLng;
+    }
+
+
+    // controls the back arrow in the toolbar
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
@@ -308,6 +336,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 getSupportActionBar().setDisplayHomeAsUpEnabled(false);
                 getSupportActionBar().show();
                 title.setText("Reports");
+                formFragment.resetForm();
                 FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
                 fragmentTransaction.hide(formFragment);
                 fragmentTransaction.show(reportsFragment);
@@ -320,26 +349,26 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
-        Log.d("mapTrack", "onRequestPermissionsResult: ");
+    public void onBackPressed() {
 
+        BackPressSupport fragmentPressed = (BackPressSupport)currentFragment;
+        if(fragmentPressed.onBackPressed() == false)
+        {
+            super.onBackPressed();
+        }
+
+
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
+
+        Log.d("mapTrack", "onRequestPermissionsResult: ");
         getLastLocation();
-//        switch (requestCode) {
-//            case 3: {
-//                if (permissions[0].equals(Manifest.permission.ACCESS_COARSE_LOCATION)) {
-//                    if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-//                        getLastLocation();
-//
-//                    } else{
-//
-//                    }
-//                }
-//            }
-//        }
+
     }
 
     private void getLocationPermission() {
-
 
 
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.INTERNET)
@@ -352,15 +381,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             Log.d("MapDemoActivity", "Internet permission not granted");
 
         }
-//        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-//                != PackageManager.PERMISSION_GRANTED) {
-//
-//            ActivityCompat.requestPermissions(this,
-//                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
-//                    2);
-//            Log.d("MapDemoActivity", "Fine permission not granted");
-//
-//        }
 
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
                 != PackageManager.PERMISSION_GRANTED) {
@@ -377,16 +397,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
     }
 
-    public LatLng getLatLng() {
-
-
-        return latLng;
-    }
-
-    public void submit(View view)
-    {
-        (formFragment).setNearStreet(latLng);
-    }
 
 
 }

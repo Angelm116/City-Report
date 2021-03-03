@@ -1,22 +1,11 @@
 package com.example.angelmendez.cityreport;
 
-import android.Manifest;
 import android.app.Activity;
-import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.pm.PackageManager;
-import android.database.Cursor;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.os.Bundle;
 
-import android.app.AlertDialog;
-import android.app.DownloadManager;
-import android.content.Context;
-
 import androidx.annotation.Nullable;
-import androidx.appcompat.widget.Toolbar;
-import androidx.core.app.ActivityCompat;
 import androidx.core.widget.NestedScrollView;
 import androidx.fragment.app.Fragment;
 
@@ -37,7 +26,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
@@ -54,19 +42,17 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.MapsInitializer;
 import com.google.android.gms.maps.OnMapReadyCallback;
-import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
-import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.HashMap;
 
 import static android.app.Activity.RESULT_CANCELED;
 import static android.app.Activity.RESULT_OK;
@@ -74,11 +60,16 @@ import static android.app.Activity.RESULT_OK;
 
 public class FormFragment extends Fragment implements PopupMenu.OnMenuItemClickListener, BackPressSupport{
 
+
+    NestedScrollView scrollView;
+
+    //Map
     MapView mMapView;
     private GoogleMap googleMap;
-    TextView pictureAttached;
-    ReportObject reportObject;
+    Marker marker;
 
+    // Report
+    ReportObject reportObject;
     String date = null;
     String description = "";
     String category = "";
@@ -86,12 +77,22 @@ public class FormFragment extends Fragment implements PopupMenu.OnMenuItemClickL
     LatLng location = null;
     ArrayList<Bitmap> photoArray;
     LoadingDialog dialog;
-    Marker marker;
+
+    //RadioGroup
     RadioGroup radioGroup;
-    EditText descriptionInput;
-    NestedScrollView scrollView;
+    HashMap<String, RadioButton> categoryLink; //given the title of a catergory, find the radiobutton object
     RadioButton selected;
+    ArrayList<RadioButton> radioButtons;
+
+    EditText descriptionInput;
+    TextView pictureAttached;
     GridLayout grid;
+    Button submitButton;
+    
+    //update report 
+    ReportObject updateReport; 
+    boolean isUpdate;
+
 
 
 
@@ -110,7 +111,7 @@ public class FormFragment extends Fragment implements PopupMenu.OnMenuItemClickL
         grid = rootView.findViewById(R.id.grid);
 
         Button cameraButton = (Button) rootView.findViewById(R.id.add_picture_btn);
-        Button submitButton = (Button) rootView.findViewById(R.id.submit_btn);
+        submitButton = (Button) rootView.findViewById(R.id.submit_btn);
 
         photoArray = new ArrayList<>();
         pictureAttached = rootView.findViewById(R.id.picture_attached);
@@ -119,12 +120,10 @@ public class FormFragment extends Fragment implements PopupMenu.OnMenuItemClickL
         cameraButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-//                Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-//                startActivityForResult(intent, 0);
 
                 PopupMenu popup = new PopupMenu(getActivity().getApplicationContext(), v);
                 popup.setOnMenuItemClickListener(FormFragment.this);
-                popup.inflate(R.menu.popup_menu);
+                popup.inflate(R.menu.add_photo_menu);
                 popup.show();
             }
         });
@@ -132,13 +131,16 @@ public class FormFragment extends Fragment implements PopupMenu.OnMenuItemClickL
         submitButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-              //  Log.d("TAG", "onClick: ");
-                //System.exit(0);
-                setNearStreet(location);
 
-
-               // date = DateFormat.getDateInstance().format(DareFormat);
-
+                if (isUpdate)
+                {
+                    setNearStreet(location);
+                   // updateReport();
+                }
+                else
+                {
+                    submitReport();
+                }
 
             }
         });
@@ -174,11 +176,16 @@ public class FormFragment extends Fragment implements PopupMenu.OnMenuItemClickL
 
 
         radioGroup = rootView.findViewById(R.id.radioGroup);
-        final ArrayList<RadioButton> radioButtons = new ArrayList<>();
+        radioButtons = new ArrayList<>();
         radioButtons.add((RadioButton)rootView.findViewById(R.id.category_1));
         radioButtons.add((RadioButton)rootView.findViewById(R.id.category_2));
         radioButtons.add((RadioButton)rootView.findViewById(R.id.category_3));
         radioButtons.add((RadioButton)rootView.findViewById(R.id.category_4));
+
+        categoryLink = new HashMap<>();
+        for (int i = 0; i < 4; i++){
+            categoryLink.put(radioButtons.get(i).getText().toString(), radioButtons.get(i));
+        }
 
         radioGroup.setOnCheckedChangeListener( new RadioGroup.OnCheckedChangeListener() {
 
@@ -230,166 +237,6 @@ public class FormFragment extends Fragment implements PopupMenu.OnMenuItemClickL
         return rootView;
     }
 
-    public boolean onBackPressed() {
-        radioGroup.clearCheck();
-        selected.setTextColor(getResources().getColor(R.color.black));
-        ((MainActivity) getActivity()).loadReportsFragment();
-        return true;
-    }
-
-    public void resetForm()
-    {
-         date = null;
-         description = "";
-         category = "";
-         nearStreet = "";
-         location = null;
-         photoArray = null;
-
-         scrollView.scrollTo(0, 0);
-         descriptionInput.clearFocus();
-         descriptionInput.setText("");
-         grid.removeAllViews();
-        pictureAttached.setVisibility(View.INVISIBLE);
-         updateMap(((MainActivity) getActivity()).getLatLng());
-    }
-
-    public boolean checkForm(){
-        if (selected == null)
-        {
-            Toast.makeText(getActivity(), "Must Select a Category",
-                    Toast.LENGTH_LONG).show();
-            return false;
-        }
-        return true;
-    }
-
-    public void saveReport()
-    {
-        if (checkForm())
-       {
-        reportObject = new ReportObject(nearStreet, date, photoArray, location, description, category);
-        reportObject.saveToFile(getContext());
-        Log.d("save", "saveReport: saved");
-        radioGroup.clearCheck();
-        selected.setTextColor(getResources().getColor(R.color.black));
-        ((MainActivity) getActivity()).loadReportsFragment();
-
-        }
-
-
-    }
-
-    public void setNearStreetFinished(JSONObject response){
-        try {
-            //nearStreet = response.getJSONArray("results").getJSONObject(0).getString("formatted_address");
-
-            String streetNumber = response.getJSONArray("results").getJSONObject(0).getJSONArray("address_components").getJSONObject(0).getString("short_name");
-            String streetName = response.getJSONArray("results").getJSONObject(0).getJSONArray("address_components").getJSONObject(1).getString("short_name");
-            String city = response.getJSONArray("results").getJSONObject(0).getJSONArray("address_components").getJSONObject(2).getString("short_name");
-            String state = response.getJSONArray("results").getJSONObject(0).getJSONArray("address_components").getJSONObject(4).getString("short_name");
-
-            nearStreet = streetNumber + " " + streetName + ", " + city + ", " + state;
-
-            Log.d("near", nearStreet);
-
-            Calendar cal = Calendar.getInstance();
-            int year = cal.get(Calendar.YEAR); // get the current year
-            int month = cal.get(Calendar.MONTH) + 1; // month...
-            int day = cal.get(Calendar.DAY_OF_MONTH); // current day in the month
-            int hour = cal.get(Calendar.HOUR_OF_DAY);
-            int minute = cal.get(Calendar.MINUTE);
-            String am_pm = cal.get(Calendar.AM_PM) == Calendar.AM ? "AM" : "PM";
-
-            // sets your textview to e.g. 2012/03/15 for today
-
-            String monthS = month < 10 ? ("0" + month) : ("" + month);
-            String dayS = day < 10 ? ("0" + day) : ("" + day);
-            String hourS = hour < 10 ? ("0" + hour) : ("" + hour);
-            String minuteS = minute < 10 ? ("0" + minute) : ("" + minute);
-
-            date = (monthS + "/" + dayS + "/" + year + "  at " + hourS + ":" + minuteS + " " + am_pm);
-
-            Log.d("TAG", date);
-
-            dialog.dismissDialog();
-            saveReport();
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void setNearStreet(LatLng latLng)
-    {
-        //Log.d("near", "setNearStreet: ");
-        RequestQueue queue = Volley.newRequestQueue(getContext());
-        String url = "https://maps.googleapis.com/maps/api/geocode/json?latlng=" + String.valueOf(latLng.latitude) + "," + String.valueOf(latLng.longitude) + "&key=AIzaSyAQw10ndgEutTniHm00lcLXAnZVbBFEweM";
-
-        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest
-                (Request.Method.GET, url, null, new com.android.volley.Response.Listener<JSONObject>() {
-
-
-
-                    @Override
-                    public void onResponse(JSONObject response) {
-
-                           // Log.d("near", response.toString());
-                            dialog.startLoadingDialog();
-                            setNearStreetFinished(response);
-
-
-
-
-
-                    }
-                }, new Response.ErrorListener() {
-
-                    @Override
-                    public void onErrorResponse(VolleyError error) {
-                        // TODO: Handle error
-
-                        Log.d("near", "didnt work2");
-
-                    }
-                });
-
-        queue.add(jsonObjectRequest);
-
-    }
-
-
-    public void updateMap(LatLng lat) {
-
-        ((MainActivity) getActivity()).setLocationHolder(lat);
-
-        mMapView.getMapAsync(new OnMapReadyCallback() {
-            @Override
-            public void onMapReady(GoogleMap mMap) {
-                googleMap = mMap;
-
-                Log.d("update", "onMapReady: on update");
-
-
-                location = ((MainActivity) getActivity()).getLocationHolder();
-
-                if (marker != null)
-                {
-                    marker.remove();
-                }
-
-                marker = googleMap.addMarker(new MarkerOptions().position(location).title("Current Location").draggable(false));
-
-                float zoomLevel = 18.5f; //This goes up to 21
-                googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(location, zoomLevel));
-
-                googleMap.getUiSettings().setAllGesturesEnabled(false);
-
-            }
-        });
-
-
-    }
-
     @Override
     public void onResume() {
         super.onResume();
@@ -414,6 +261,246 @@ public class FormFragment extends Fragment implements PopupMenu.OnMenuItemClickL
         mMapView.onLowMemory();
     }
 
+
+    public void populateForm(ReportObject report)
+    {
+        // set map to the location of the report
+        // set radio button to the category
+        // set description to what it is supposed to be
+        // set photos text to the number it is supposed to be
+        // set pictures on the bottom to what they are supposed to be
+
+        isUpdate = true;
+
+        updateReport = report;
+        updateMap(report.getLocation());
+
+        RadioButton select = categoryLink.get(report.getCategory());
+        radioGroup.check(select.getId());
+        category = report.getCategory();
+
+        descriptionInput.setText(report.getDescription());
+        description = report.getDescription();
+
+        if (report.getPhotoArray() != null) {
+            int photoArraySize = report.getPhotoArray().size();
+            setPhotoCountText(photoArraySize);
+
+            for (int i = 0; i < photoArraySize; i++) {
+                addPhotoToGrid(report.getPhotoArray().get(i));
+            }
+        }
+
+        submitButton.setText("Update");
+
+    }
+
+    public boolean onBackPressed() {
+
+        resetForm();
+        ((MainActivity) getActivity()).loadReportsFragment();
+
+        return true;
+    }
+
+    public void clearCategories()
+    {
+        radioGroup.clearCheck();
+        if (selected != null)
+        {
+            selected.setTextColor(getResources().getColor(R.color.black));
+        }
+
+    }
+
+    public boolean categoryIsSelected(){
+        if (selected == null)
+        {
+            Toast.makeText(getActivity(), "Must Select a Category",
+                    Toast.LENGTH_LONG).show();
+            return false;
+        }
+        return true;
+    }
+
+    public void resetForm()
+    {
+         isUpdate = false;
+         date = null;
+         description = "";
+         category = "";
+         nearStreet = "";
+         location = null;
+         photoArray = null;
+
+         scrollView.scrollTo(0, 0);
+         descriptionInput.clearFocus();
+         descriptionInput.setText("");
+         grid.removeAllViews();
+        pictureAttached.setVisibility(View.INVISIBLE);
+        submitButton.setText("Submit");
+        clearCategories();
+        updateMap(((MainActivity) getActivity()).getLatLng());
+
+    }
+
+
+    public void saveReport()
+    {
+        if (categoryIsSelected())
+       {
+
+        reportObject = new ReportObject(nearStreet, date, photoArray, location, description, category);
+           Log.d("save", nearStreet + "888");
+        reportObject.saveToFile(getContext());
+        Log.d("save", "saveReport: saved");
+
+        ((MainActivity) getActivity()).loadReportsFragment();
+
+        }
+
+
+    }
+
+    // not the best approach need to figure out how to call setnearstreet and wait for the result without stopping main execution
+    public void submitReport()
+    {
+        setNearStreet(location);
+
+    }
+
+    public void updateReport()
+    {
+        Log.d("Method", "on FormFragment: updateReport()");
+
+        //setNearStreet(location);
+
+        updateReport.setDescription(description);
+        updateReport.setCategory(category);
+        updateReport.setLocation(location);
+        updateReport.setNearStreet(nearStreet);
+        // update file with new info.
+        ReportObject.updateReportFile(getContext(), updateReport);
+
+        ((MainActivity) getActivity()).loadReportsFragment();
+
+        Log.d("Method", "out FormFragment: updateReport()");
+    }
+
+    public void setDate()
+    {
+        Calendar cal = Calendar.getInstance();
+        int year = cal.get(Calendar.YEAR); // get the current year
+        int month = cal.get(Calendar.MONTH) + 1; // month...
+        int day = cal.get(Calendar.DAY_OF_MONTH); // current day in the month
+        int hour = cal.get(Calendar.HOUR_OF_DAY);
+        int minute = cal.get(Calendar.MINUTE);
+        String am_pm = cal.get(Calendar.AM_PM) == Calendar.AM ? "AM" : "PM";
+
+        // sets your textview to e.g. 2012/03/15 for today
+
+        String monthS = month < 10 ? ("0" + month) : ("" + month);
+        String dayS = day < 10 ? ("0" + day) : ("" + day);
+        String hourS = hour < 10 ? ("0" + hour) : ("" + hour);
+        String minuteS = minute < 10 ? ("0" + minute) : ("" + minute);
+
+        date = (monthS + "/" + dayS + "/" + year + "  at " + hourS + ":" + minuteS + " " + am_pm);
+
+       // Log.d("TAG", date);
+    }
+
+    public void setNearStreet(LatLng latLng)
+    {
+        //Log.d("near", "setNearStreet: ");
+
+        // Request neat street
+        RequestQueue queue = Volley.newRequestQueue(getContext());
+        String url = "https://maps.googleapis.com/maps/api/geocode/json?latlng=" + String.valueOf(latLng.latitude) + "," + String.valueOf(latLng.longitude) + "&key=AIzaSyAQw10ndgEutTniHm00lcLXAnZVbBFEweM";
+
+        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest
+                (Request.Method.GET, url, null, new com.android.volley.Response.Listener<JSONObject>() {
+
+                    // Process response
+                    @Override
+                    public void onResponse(JSONObject response) {
+
+                         //  Log.d("near", response.toString());
+                            //dialog.startLoadingDialog();
+                            //processStreetResponse(response);
+
+                        try {
+                            String streetNumber = response.getJSONArray("results").getJSONObject(0).getJSONArray("address_components").getJSONObject(0).getString("short_name");
+                            String streetName = response.getJSONArray("results").getJSONObject(0).getJSONArray("address_components").getJSONObject(1).getString("short_name");
+                            String city = response.getJSONArray("results").getJSONObject(0).getJSONArray("address_components").getJSONObject(2).getString("short_name");
+                            String state = response.getJSONArray("results").getJSONObject(0).getJSONArray("address_components").getJSONObject(4).getString("short_name");
+
+                            nearStreet = streetNumber + " " + streetName + ", " + city + ", " + state;
+
+                           // Log.d("near", nearStreet);
+
+                            setDate();
+
+                            if (isUpdate)
+                            {
+                                updateReport();
+                            }
+                            else
+                            {
+                                saveReport();
+                            }
+
+                            
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+
+
+                    }
+                }, new Response.ErrorListener() {
+
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        // TODO: Handle error
+
+                        Log.d("near", "didnt work2");
+
+                    }
+                });
+
+        queue.add(jsonObjectRequest);
+
+    }
+
+    public void updateMap(LatLng lat) {
+
+        ((MainActivity) getActivity()).setLocationHolder(lat);
+
+        mMapView.getMapAsync(new OnMapReadyCallback() {
+            @Override
+            public void onMapReady(GoogleMap mMap) {
+
+                googleMap = mMap;
+                location = ((MainActivity) getActivity()).getLocationHolder();
+
+                if (marker != null)
+                {
+                    marker.remove();
+                }
+
+                marker = googleMap.addMarker(new MarkerOptions().position(location).title("Current Location").draggable(false));
+
+                float zoomLevel = 18.5f; //This goes up to 21
+                googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(location, zoomLevel));
+
+                googleMap.getUiSettings().setAllGesturesEnabled(false);
+
+            }
+        });
+
+
+    }
+
+    // Menu that appears when you click add photo, lets you choose between camera or gallery
     @Override
     public boolean onMenuItemClick(MenuItem item) {
         Toast.makeText(getActivity().getApplicationContext(), "Selected Item: " + item.getTitle(), Toast.LENGTH_SHORT).show();
@@ -431,109 +518,111 @@ public class FormFragment extends Fragment implements PopupMenu.OnMenuItemClickL
         }
     }
 
-    private int dpToPixel(float dp) {
-        DisplayMetrics metrics = this.getResources().getDisplayMetrics();
-        int px = (int)(dp * (metrics.densityDpi/160f));
-        return px;
-    }
-
     @Override
     public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
-        int gridPosition = 0;
+        ArrayList<Bitmap> photoArrayHolder;
 
-        if (photoArray == null)
+        if (isUpdate == true)
         {
-            photoArray = new ArrayList<>();
+            if (updateReport.getPhotoArray() == null)
+            {
+                updateReport.initializePhotoArray();
+            }
+            photoArrayHolder = updateReport.getPhotoArray();
         }
+        else
+        {
+            if (photoArray == null)
+            {
+                photoArray = new ArrayList<>();
+            }
+            photoArrayHolder = photoArray;
+        }
+
+
+
         if (resultCode != RESULT_CANCELED) {
             switch (requestCode) {
                 case 0:  // from camera
                     if (resultCode == RESULT_OK && data != null) {
                         Bitmap selectedImage = (Bitmap) data.getExtras().get("data");
-                        photoArray.add(selectedImage);
+                        photoArrayHolder.add(selectedImage);
+                        if (isUpdate){updateReport.addPhotoToBeAdded(selectedImage);}
                         pictureAttached.setVisibility(View.VISIBLE);
                     }
 
-                    if (photoArray.size() == 1)
+                    if (photoArrayHolder.size() == 1)
                     {
                         pictureAttached.setText("1 Picture Attached");
                     }
                     else
                     {
-                        pictureAttached.setText(photoArray.size() + " Pictures Attached");
+                        pictureAttached.setText(photoArrayHolder.size() + " Pictures Attached");
                     }
 
                     break;
                 case 1: // from gallery
                     if (resultCode == RESULT_OK && data != null) {
                         Uri selectedImage = data.getData();
-                        String[] filePathColumn = {MediaStore.Images.Media.DATA};
                         if (selectedImage != null) {
-                            Cursor cursor = (getActivity()).getContentResolver().query(selectedImage,
-                                    filePathColumn, null, null, null);
-                            if (cursor != null) {
-                                cursor.moveToFirst();
 
-                                int columnIndex = cursor.getColumnIndex(filePathColumn[0]);
-                                String picturePath = cursor.getString(columnIndex);
-                                cursor.close();
+                            try {
 
-                                //photoArray.add(BitmapFactory.decodeFile(picturePath));
+                                photoArrayHolder.add(MediaStore.Images.Media.getBitmap(getActivity().getContentResolver(), selectedImage));
 
-                                try {
-                                    photoArray.add(MediaStore.Images.Media.getBitmap(getActivity().getContentResolver(), selectedImage));
-                                } catch (IOException e) {
-
-                                }
-
-                                if (photoArray.size() == 1)
+                                if (isUpdate)
                                 {
-                                    pictureAttached.setText("1 Picture Attached");
+                                    updateReport.addPhotoToBeAdded(photoArrayHolder.get(photoArrayHolder.size() - 1));
                                 }
-                                else
-                                {
-                                    pictureAttached.setText(photoArray.size() + " Picture Attached");
-                                }
-                                pictureAttached.setVisibility(View.VISIBLE);
+
+                            } catch (IOException e) {
+
                             }
-                        }
 
+                            setPhotoCountText(photoArrayHolder.size());
+
+                            pictureAttached.setVisibility(View.VISIBLE);
+                        }
                     }
                     break;
             }
 
             // update grid
-
-            ImageView image = new ImageView(getContext());
-            image.setImageBitmap(photoArray.get(photoArray.size() - 1));
-
-
-            //GridLayout.LayoutParams layoutParams = new GridLayout.LayoutParams(GridLayout.spec(1), GridLayout.spec(1) );
-
-
-            GridLayout.LayoutParams layoutParams = new GridLayout.LayoutParams(new ViewGroup.LayoutParams(dpToPixel(80), dpToPixel(100)));
-            layoutParams.setMargins(dpToPixel(3), dpToPixel(3), dpToPixel(3), dpToPixel(3));
-            image.setLayoutParams(layoutParams);
-            grid.addView(image);
-
-//            gridPosition = grid.getChildCount();
-//
-//            for (int i = gridPosition; i <= photoArray.size(); i++)
-//            {
-//
-//            }
+            addPhotoToGrid(photoArrayHolder.get(photoArrayHolder.size() - 1));
 
         }
     }
 
-//        photoArray = (Bitmap)data.getExtras().get("data");
-//
-//        //imageView.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-//
-//
-//        pictureAttached.setVisibility(View.VISIBLE);
+    private int dpToPixel(float dp) {
+        DisplayMetrics metrics = this.getResources().getDisplayMetrics();
+        int px = (int)(dp * (metrics.densityDpi/160f));
+        return px;
+    }
+
+
+    private void addPhotoToGrid(Bitmap ImageBitmap)
+    {
+        ImageView image = new ImageView(getContext());
+        image.setImageBitmap(ImageBitmap);
+        GridLayout.LayoutParams layoutParams = new GridLayout.LayoutParams(new ViewGroup.LayoutParams(dpToPixel(80), dpToPixel(100)));
+        layoutParams.setMargins(dpToPixel(3), dpToPixel(3), dpToPixel(3), dpToPixel(3));
+        image.setLayoutParams(layoutParams);
+        grid.addView(image);
+    }
+
+    private void setPhotoCountText(int count)
+    {
+        if (count == 1)
+        {
+            pictureAttached.setText("1 Picture Attached");
+        }
+        else
+        {
+            pictureAttached.setText(count + " Picture Attached");
+        }
+    }
 
 
     }

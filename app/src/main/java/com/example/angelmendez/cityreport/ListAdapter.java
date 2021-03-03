@@ -16,6 +16,7 @@ import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 import androidx.core.content.FileProvider;
+import androidx.fragment.app.FragmentActivity;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.io.File;
@@ -30,12 +31,16 @@ public class ListAdapter extends RecyclerView.Adapter<RecyclerViewHolder> {
     int reportCount;
     ArrayList<ReportObject> dataSet;
     Context context;
+    RecyclerView recyclerView;
+    MainActivity mainActivity;
 
-    public ListAdapter(ArrayList<ReportObject> dataSet, Context context) {
+    public ListAdapter(ArrayList<ReportObject> dataSet, Context context, RecyclerView recyclerView, MainActivity mainActivity) {
 
         reportCount = dataSet.size();
         this.dataSet = dataSet;
         this.context = context;
+        this.recyclerView = recyclerView;
+        this.mainActivity = mainActivity;
     }
 
     public void setData( ArrayList<ReportObject> data)
@@ -53,12 +58,29 @@ public class ListAdapter extends RecyclerView.Adapter<RecyclerViewHolder> {
     @Override
     public RecyclerViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
 
-        View view = LayoutInflater.from(parent.getContext()).inflate(viewType, parent, false);
+        final View view = LayoutInflater.from(parent.getContext()).inflate(viewType, parent, false);
+        view.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                int position  = recyclerView.getChildLayoutPosition(view);
+                mainActivity.updateReport(dataSet.get(position));
+            }
+        });
+        view.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v) {
+                int position  = recyclerView.getChildLayoutPosition(view);
+                return mainActivity.deleteReport(dataSet.get(position));
+
+            }
+        });
         return new RecyclerViewHolder(view);
     }
 
     @Override
     public void onBindViewHolder(@NonNull RecyclerViewHolder holder, final int position) {
+
+
         holder.nearStreetText.setText("Near " + dataSet.get(position).getNearStreet());
         holder.dateText.setText("On " + dataSet.get(position).getDate());
 
@@ -89,6 +111,7 @@ public class ListAdapter extends RecyclerView.Adapter<RecyclerViewHolder> {
         }
         //holder.photo.setImageBitmap(Bitmap.createScaledBitmap(bitmap, 120, 120, false));
 
+
     }
 
     public static void setMargins (View v, int l, int t, int r, int b) {
@@ -103,7 +126,7 @@ public class ListAdapter extends RecyclerView.Adapter<RecyclerViewHolder> {
     {
         // photos
         ArrayList<Uri> imageUris = null;
-        String path = v.getContext().getFilesDir().getAbsolutePath() + File.separator + "ReportsDir" + File.separator + "ReportPhotos" + File.separator + dataSet.get(position).getPhotoDirName();
+        String path = v.getContext().getFilesDir().getAbsolutePath() + File.separator + "ReportsDir" + File.separator + "ReportPhotos" + File.separator + dataSet.get(position).getPhotoDirectoryName();
         File photoDir  = new File(path);
         File[] photoFiles = photoDir.listFiles();
 

@@ -7,7 +7,7 @@
     android:layout_height="match_parent"
     android:id="@+id/scrollFeed"
     app:layout_behavior="@string/appbar_scrolling_view_behavior"
-    android:background="@drawable/centre_background"
+    android:background="@drawable/blue_gradient_background"
     android:focusableInTouchMode="true">
 
 
@@ -73,7 +73,7 @@
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
-                        android:background="@drawable/map_background"
+                        android:background="@drawable/map_rounded_background"
                         android:orientation="vertical"></LinearLayout>
                 </FrameLayout>
 
@@ -84,7 +84,7 @@
                     android:layout_gravity="center"
                     android:layout_marginVertical="10dp"
                     android:height="30dp"
-                    android:background="@drawable/submit_background"
+                    android:background="@drawable/rounded_button_background2"
                     android:fontFamily="sans-serif-medium"
                     android:onClick="changeLocationStart"
                     android:text="Change Location"
@@ -125,9 +125,9 @@
                         android:layout_marginTop="10dp"
                         android:layout_marginBottom="7dp"
                         android:layout_weight="1"
-                        android:background="@drawable/selector"
+                        android:background="@drawable/radio_button_selector"
                         android:button="@android:color/transparent"
-                        android:stateListAnimator="@animator/anim_test"
+                        android:stateListAnimator="@animator/radio_button_animation"
                         android:text="Traffic Danger"
                         android:textAlignment="center"
                         android:textColor="#000"
@@ -143,9 +143,9 @@
                         android:layout_marginHorizontal="10dp"
                         android:layout_marginBottom="7dp"
                         android:layout_weight="1"
-                        android:background="@drawable/selector"
+                        android:background="@drawable/radio_button_selector"
                         android:button="@android:color/transparent"
-                        android:stateListAnimator="@animator/anim_test"
+                        android:stateListAnimator="@animator/radio_button_animation"
                         android:text="Suspicious Activity"
                         android:textAlignment="center"
                         android:textColor="#000"
@@ -160,9 +160,9 @@
                         android:layout_marginHorizontal="10dp"
                         android:layout_marginBottom="7dp"
                         android:layout_weight="1"
-                        android:background="@drawable/selector"
+                        android:background="@drawable/radio_button_selector"
                         android:button="@android:color/transparent"
-                        android:stateListAnimator="@animator/anim_test"
+                        android:stateListAnimator="@animator/radio_button_animation"
                         android:text="Physical Damage"
                         android:textAlignment="center"
                         android:textColor="#000"
@@ -177,11 +177,11 @@
                         android:layout_marginHorizontal="10dp"
                         android:layout_marginBottom="7dp"
                         android:layout_weight="1"
-                        android:background="@drawable/selector"
+                        android:background="@drawable/radio_button_selector"
                         android:button="@android:color/transparent"
                         android:drawableLeft="@drawable/icon_person_selector"
                         android:padding="7dp"
-                        android:stateListAnimator="@animator/anim_test"
+                        android:stateListAnimator="@animator/radio_button_animation"
                         android:text="Pedestrian/Bike Danger"
                         android:textAlignment="center"
                         android:textColor="#000"
@@ -233,7 +233,7 @@
                         android:layout_height="wrap_content"
                         android:layout_gravity="right|left"
                         android:layout_marginTop="10dp"
-                        android:background="@drawable/centre_button"
+                        android:background="@drawable/button_gradient_rounded_background"
                         android:fontFamily="sans-serif-medium"
                         android:text="Add Picture"
                         android:textColor="#fff" />
@@ -245,7 +245,7 @@
                         android:layout_marginLeft="15dp"
                         android:layout_marginTop="12dp"
                         android:layout_weight="1"
-                        android:drawableLeft="@drawable/ic_upload"
+                        android:drawableLeft="@drawable/icon_upload_arrow"
                         android:text="Picture Attached"
                         android:textColor="#32CD32"
                         android:textSize="14sp" />
@@ -281,7 +281,7 @@
             android:layout_gravity="center"
             android:layout_marginTop="25dp"
             android:layout_marginBottom="20dp"
-            android:background="@drawable/submit_background"
+            android:background="@drawable/rounded_button_background2"
             android:fontFamily="sans-serif-medium"
             android:text="Submit"
             android:textColor="#fff" />

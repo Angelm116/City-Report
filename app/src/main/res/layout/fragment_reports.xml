@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".ReportsFragment"
-    android:background="@drawable/centre_background">
+    android:background="@drawable/blue_gradient_background">
 
 
 

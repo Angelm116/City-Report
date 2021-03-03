@@ -26,12 +26,9 @@ public class ReportsFragment extends Fragment {
     ArrayList<ReportObject> reportObject;
 
     public ReportsFragment(ArrayList<ReportObject> reportObject) {
-        // Required empty public constructor
+
         this.reportObject = reportObject;
-
     }
-
-
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -57,7 +54,7 @@ public class ReportsFragment extends Fragment {
         recyclerView.setHasFixedSize(true);
         recyclerView.setLayoutManager(new LinearLayoutManager(view.getContext()));
 
-        adapter = new ListAdapter(reportObject, getContext());
+        adapter = new ListAdapter(reportObject, getContext(), recyclerView, (MainActivity)this.getActivity());
         recyclerView.setAdapter(adapter);
         recyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
        // getReports();
@@ -66,12 +63,15 @@ public class ReportsFragment extends Fragment {
         return view;
     }
 
-    public void updateReports(ArrayList<ReportObject> reports)
+    public void updateReportsList(ArrayList<ReportObject> reports)
     {
-        Log.d("updateReports", "updateReports: " + reports.size());
+        Log.d("Method", "on ReportsFragment: updateReportsList()");
+        Log.d("Method", "on ReportsFragment: updateReportsList(), list size:" + reports.size());
+
         adapter.setData(reports);
         adapter.notifyDataSetChanged();
 
+        // Moves the list to the last report
         recyclerView.post(new Runnable() {
             @Override
             public void run() {
@@ -79,10 +79,10 @@ public class ReportsFragment extends Fragment {
                 if (adapter.getItemCount() > 0) {
                     recyclerView.smoothScrollToPosition(adapter.getItemCount() - 1);
                 }
-                // Here adapter.getItemCount()== child count
             }
         });
 
+        Log.d("Method", "out ReportsFragment: updateReportsList()");
     }
 
 
