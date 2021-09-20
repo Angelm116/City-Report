@@ -12,20 +12,18 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import com.google.android.material.snackbar.Snackbar;
 
-import java.io.File;
 import java.util.ArrayList;
 
 
-public class ReportsFragment extends Fragment {
+public class FragmentHome extends Fragment {
 
 
     private RecyclerView recyclerView;
-    private ListAdapter adapter;
+    private RecyclerListAdapter adapter;
     ArrayList<ReportObject> reportObject;
 
-    public ReportsFragment(ArrayList<ReportObject> reportObject) {
+    public FragmentHome(ArrayList<ReportObject> reportObject) {
 
         this.reportObject = reportObject;
     }
@@ -54,7 +52,7 @@ public class ReportsFragment extends Fragment {
         recyclerView.setHasFixedSize(true);
         recyclerView.setLayoutManager(new LinearLayoutManager(view.getContext()));
 
-        adapter = new ListAdapter(reportObject, getContext(), recyclerView, (MainActivity)this.getActivity());
+        adapter = new RecyclerListAdapter(reportObject, getContext(), recyclerView, (MainActivity)this.getActivity());
         recyclerView.setAdapter(adapter);
         recyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
        // getReports();

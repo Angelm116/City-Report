@@ -26,7 +26,7 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Random;
 
-public class ListAdapter extends RecyclerView.Adapter<RecyclerViewHolder> {
+public class RecyclerListAdapter extends RecyclerView.Adapter<RecyclerViewHolder> {
 
     int reportCount;
     ArrayList<ReportObject> dataSet;
@@ -34,7 +34,7 @@ public class ListAdapter extends RecyclerView.Adapter<RecyclerViewHolder> {
     RecyclerView recyclerView;
     MainActivity mainActivity;
 
-    public ListAdapter(ArrayList<ReportObject> dataSet, Context context, RecyclerView recyclerView, MainActivity mainActivity) {
+    public RecyclerListAdapter(ArrayList<ReportObject> dataSet, Context context, RecyclerView recyclerView, MainActivity mainActivity) {
 
         reportCount = dataSet.size();
         this.dataSet = dataSet;
@@ -81,8 +81,8 @@ public class ListAdapter extends RecyclerView.Adapter<RecyclerViewHolder> {
     public void onBindViewHolder(@NonNull RecyclerViewHolder holder, final int position) {
 
 
-        holder.nearStreetText.setText("Near " + dataSet.get(position).getNearStreet());
-        holder.dateText.setText("On " + dataSet.get(position).getDate());
+        holder.nearStreetText.setText("Near " + dataSet.get(position).getLocationObject().getFormattedAddress());
+        holder.dateText.setText("On " + dataSet.get(position).getDateTimeForDisplay());
 
         if (dataSet.get(position).getPhotoArray() == null)
         {

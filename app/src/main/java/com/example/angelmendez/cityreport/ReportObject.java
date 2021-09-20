@@ -5,7 +5,13 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.util.Log;
 
+import com.android.volley.Request;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
 import com.google.android.gms.maps.model.LatLng;
+
+import org.json.JSONObject;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -15,38 +21,41 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
-import java.nio.file.Files;
-import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
+import java.util.Calendar;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 
 public class ReportObject implements Serializable {
-    private String nearStreet;
-    private String date;
-    private  transient ArrayList<Bitmap> photoArray;
+
+    //private static final long serialVersionUID = 6529685098267757690L;
+    //private String nearStreet;
+    private Calendar date;
+    private transient ArrayList<Bitmap> photoArray;
     private ArrayList<String> photoFileNames;
-    private  transient ArrayList<Bitmap> photosToAdd;
+    private transient ArrayList<Bitmap> photosToAdd;
     private ArrayList<String> photosToDelete;
-    private transient LatLng location;
+    private transient LatLng mLatLng;
     private String description;
     private String category;
     private String fileName;
-    private double lat;
-    private double lng;
     private String photoDirectoryName;
+    private ReportLocation locationObject;
 
-    public ReportObject(String street, String date, ArrayList<Bitmap> photoArray, LatLng location, String description, String category)
+    public ReportObject(
+            ReportLocation locationObject, Calendar date, ArrayList<Bitmap> photoArray, String description, String category)
     {
-        this.nearStreet = street;
+        //this.nearStreet = street;
+        this.locationObject = locationObject;
         this.date = date;
         this.photoArray = photoArray;
-        this.location = location;
+        this.mLatLng = locationObject.getLatLng();
         this.description = description;
         this.category = category;
         this.fileName = generateFileName();
-        this.lat = location.latitude;
-        this.lng = location.longitude;
+
 
     }
 
@@ -76,16 +85,28 @@ public class ReportObject implements Serializable {
         return fileName;
     }
 
-    public String getDate() {
+    public Calendar getDate() {
         return date;
     }
 
-    public LatLng getLocation() {
-        return location;
+    public String getDateTimeForDB(){
+        SimpleDateFormat simpleDateFormat;
+        simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        return simpleDateFormat.format(date.getTime());
     }
 
-    public String getNearStreet() {
-        return nearStreet;
+    public String getDateTimeForDisplay(){
+        SimpleDateFormat simpleDateFormat;
+        simpleDateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss aaa z");
+        return simpleDateFormat.format(date.getTime());
+    }
+
+    public LatLng getLocation() {
+        return mLatLng;
+    }
+
+    public ReportLocation getLocationObject() {
+        return locationObject;
     }
 
     public String getDescription() {
@@ -107,12 +128,17 @@ public class ReportObject implements Serializable {
         this.photoArray = photoArray;
     }
 
-    public void setPhotoFileNames(ArrayList<String> photoFileNames) {
-        this.photoFileNames = photoFileNames;
+    public void initializePhotoFileNames() {
+        this.photoFileNames = new ArrayList<>();
     }
 
     public void setPhotosToDelete(ArrayList<String> photosToDelete) {
         this.photosToDelete = photosToDelete;
+    }
+
+    public void setPhotosToAdd(ArrayList<Bitmap> array)
+    {
+        this.photosToAdd = array;
     }
 
     public void initializePhotoArray()
@@ -145,16 +171,16 @@ public class ReportObject implements Serializable {
         this.fileName = fileName;
     }
 
-    public void setDate(String date) {
+    public void setDate(Calendar date) {
         this.date = date;
     }
 
-    public void setNearStreet(String nearStreet) {
-        this.nearStreet = nearStreet;
+    public void setLocationObject(ReportLocation locationObject) {
+        this.locationObject = locationObject;
     }
 
-    public void setLocation(LatLng location) {
-        this.location = location;
+    public void setLocation(LatLng mLatLng) {
+        this.mLatLng = mLatLng;
     }
 
     public void setDescription(String description) {
@@ -171,6 +197,7 @@ public class ReportObject implements Serializable {
 
         if (photoArray != null) {
 
+            initializePhotoFileNames();
             // make directory of photos for this particular report
             photoDirectoryName = generateFileName() + "_DIR";
             String dirPath = context.getFilesDir().getAbsolutePath() + File.separator + "ReportsDir" + File.separator + "ReportPhotos" + File.separator + photoDirectoryName;
@@ -180,13 +207,16 @@ public class ReportObject implements Serializable {
                 reportPhotoDir.mkdirs();
             }
 
+            String fileName;
             File filePhoto;
             FileOutputStream fos = null;
 
             try {
                 for(int i = 0; i < photoArray.size(); i++)
                 {
-                    filePhoto = new File(dirPath + File.separator + generateFileName() + ".jpg");
+                    fileName = dirPath + File.separator + generateFileName() + ".jpg";
+                    filePhoto = new File(fileName);
+                    photoFileNames.add(fileName);
                     fos = new FileOutputStream(filePhoto);
                     photoArray.get(i).compress(Bitmap.CompressFormat.JPEG, 90, fos);
                 }
@@ -218,6 +248,49 @@ public class ReportObject implements Serializable {
         }
     }
 
+    private JSONObject getJSON()
+    {
+        Map map = new HashMap();
+        map.put("country", locationObject.getCountry());
+        map.put("city", locationObject.getCity());
+        map.put("state", locationObject.getState());
+        map.put("county", locationObject.getCounty());
+        map.put("zipcode", locationObject.getZip());
+        map.put("street_number", locationObject.getStreetNumber());
+        map.put("street_name", locationObject.getStreetName());
+        map.put("latitude", locationObject.getLatitude());
+        map.put("longitude", locationObject.getLongitude());
+        map.put("date_time", getDateTimeForDB());
+        map.put("category", category);
+        map.put("report_description", description);
+
+        return new JSONObject(map);
+    }
+
+    public void uploadToServer(Context context)
+    {
+        String url = "http://ec2-54-227-16-153.compute-1.amazonaws.com:8080/upload-report";
+
+        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest
+                (Request.Method.POST, url, getJSON(), new Response.Listener<JSONObject>() {
+
+                    @Override
+                    public void onResponse(JSONObject response) {
+                        Log.d("response", response.toString());
+                    }
+                }, new Response.ErrorListener() {
+
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        // TODO: Handle error
+                        Log.d("response", error.toString());
+
+                    }
+                });
+
+        // Access the RequestQueue through your singleton class.
+        VolleySingleton.getInstance(context).getQueue().add(jsonObjectRequest);
+    }
     public static ReportObject readFromFile(Context context, String fileName) {
 
         ReportObject reportObject = null;
@@ -229,14 +302,13 @@ public class ReportObject implements Serializable {
             reportObject = (ReportObject) objectInputStream.readObject();
             objectInputStream.close();
             fileInputStream.close();
-        } catch (IOException e) {
+        } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
-        }
-        catch (ClassNotFoundException e) {
-            e.printStackTrace();
+            Log.d("File", e.toString());
         }
 
-        if (reportObject.getPhotoDirectoryName() != null) {
+
+        if (reportObject != null && reportObject.getPhotoDirectoryName() != null) {
 
             ArrayList<Bitmap> photos = new ArrayList<>();
             String photoDirPath = context.getFilesDir().getAbsolutePath() + File.separator + "ReportsDir" + File.separator + "ReportPhotos" + File.separator + reportObject.getPhotoDirectoryName();
@@ -293,7 +365,8 @@ public class ReportObject implements Serializable {
                 if (report.getPhotosToDelete() != null) {
                     for (int i = 0; i < report.getPhotosToDelete().size(); i++) {
                         //get file names of photos to be deleted, go into dir and delete them one by one
-                        fileHolder = new File(dirPath + File.separator + report.getPhotosToDelete().get(i));
+                        //fileHolder = new File(dirPath + File.separator + report.getPhotosToDelete().get(i));
+                        fileHolder = new File(report.getPhotosToDelete().get(i));
                         fileHolder.delete();
                     }
                 }
@@ -320,12 +393,14 @@ public class ReportObject implements Serializable {
                     if (!reportPhotoDir.exists()) {                  // if the report happens to exist this could cause trouble, figure out what to do if it fails
                         reportPhotoDir.mkdirs();
                     }
+                }
 
                     // process deleted pictures
                     if (report.getPhotosToDelete() != null) {
                         for (int i = 0; i < report.getPhotosToDelete().size(); i++) {
                             //get file names of photos to be deleted, go into dir and delete them one by one
-                            fileHolder = new File(dirPath + File.separator + report.getPhotosToDelete().get(i));
+                            //fileHolder = new File(dirPath + File.separator + report.getPhotosToDelete().get(i));
+                            fileHolder = new File(report.getPhotosToDelete().get(i));
                             fileHolder.delete();
                         }
                     }
@@ -333,14 +408,22 @@ public class ReportObject implements Serializable {
                     // process added photos
                     if (report.getPhotosToAdd() != null) {
                         try {
+                            String fileName;
                             for (int i = 0; i < report.getPhotosToAdd().size(); i++) {
                                 //transform photos to be added, go into photos directory and add them one by one
-                                fileHolder = new File(dirPath + File.separator + generateFileName() + ".jpg");
+                                fileName = dirPath + File.separator + generateFileName() + ".jpg";
+                                report.photoFileNames.add(fileName);
+                                fileHolder = new File(fileName);
                                 fos = new FileOutputStream(fileHolder, false);
                                 report.getPhotosToAdd().get(i).compress(Bitmap.CompressFormat.JPEG, 90, fos);
                             }
-                            fos.flush();
-                            fos.close();
+
+                            if (fos != null)
+                            {
+                                fos.flush();
+                                fos.close();
+                            }
+
 
                         } catch (FileNotFoundException e) {
                             e.printStackTrace();
@@ -348,7 +431,6 @@ public class ReportObject implements Serializable {
                             e.printStackTrace();
                         }
                     }
-                }
             }
 
             //update report form, which is inside of the reports directory
@@ -386,7 +468,7 @@ public class ReportObject implements Serializable {
     }
     public void fixLocation()
     {
-        location = new LatLng(lat, lng);
+        mLatLng = locationObject.getLatLng();
     }
 
     public static String generateFileName() {

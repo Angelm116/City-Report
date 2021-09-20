@@ -10,18 +10,28 @@ import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
+import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
+import android.location.LocationManager;
 import android.os.Bundle;
+import android.os.Looper;
+import android.provider.Settings;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.TextView;
+import android.widget.Toast;
 
 
 import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationCallback;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -35,23 +45,26 @@ import java.util.ArrayList;
 import static com.google.android.gms.location.LocationServices.getFusedLocationProviderClient;
 
 
-public class MainActivity extends AppCompatActivity implements OnMapReadyCallback {
+public class MainActivity extends AppCompatActivity{
 
     private FragmentManager fragmentManager;
-    private Fragment switchFragment;
     public Fragment currentFragment;
-    public FormFragment formFragment;
-    public ChangeLocationFragment changeLocationFragment;
 
-    ReportsFragment reportsFragment;
+    // Fragments where the different paged of the app are displayed
+    public FragmentForm fragmentForm;
+    public FragmentSelectLocation fragmentSelectLocation;
+    public FragmentHome fragmentHome;
 
-    private FusedLocationProviderClient fusedLocationProviderClient;
+
+    private FusedLocationProviderClient fusedLocationClient;
     private Location lastKnownLocation;
     private LatLng latLng;
     private ArrayList<ReportObject> dataSet;
-    private TextView title;
+    private TextView toolbarTitle;
 
     LatLng locationHolder = null;
+
+    int PERMISSION_ID = 44;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -62,27 +75,46 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayShowTitleEnabled(false);
 
-        title = findViewById(R.id.toolbar_title);
-        //dataSet = new ArrayList<>();
+        toolbarTitle = findViewById(R.id.toolbar_title);
 
+        setStatusBarColor();
+
+        setUpDirectories();
+        loadReportsFromFiles();
+
+        setUpFragments();
+
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
+        getLastLocation();
+        
+    }
+
+    private void setStatusBarColor()
+    {
         Window window = this.getWindow();
-
-// clear FLAG_TRANSLUCENT_STATUS flag:
         window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
-
-// add FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS flag to the window
         window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-
-// finally change the color
         window.setStatusBarColor(ContextCompat.getColor(this, R.color.black_overlay));
+    }
+
+    private void setUpFragments()
+    {
+        fragmentManager = getSupportFragmentManager();
+        fragmentForm = new FragmentForm();
+        fragmentSelectLocation = new FragmentSelectLocation();
+        fragmentHome = new FragmentHome(dataSet);
+
+        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
 
 
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
+        fragmentTransaction.add(R.id.main_activity_container, fragmentForm, "formFragment").hide(fragmentForm);
+        fragmentTransaction.add(R.id.main_activity_container, fragmentSelectLocation, "changeLocationFragment").hide(fragmentSelectLocation);
+        fragmentTransaction.add(R.id.main_activity_container, fragmentHome, "reportsFragment");
+        fragmentTransaction.commit();
+    }
+    
+    private void setUpDirectories()
+    {
         String dirPath = getFilesDir().getAbsolutePath() + File.separator + "ReportsDir";
         File projDir = new File(dirPath);
         if (!projDir.exists()) {
@@ -106,39 +138,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             Log.d("filestart", "onCreate: here");
 
         }
-
-        String[] files = this.fileList();
-
-        loadReportsFromFiles();
-
-        fragmentManager = getSupportFragmentManager();
-        formFragment = new FormFragment();
-        changeLocationFragment = new ChangeLocationFragment();
-        reportsFragment = new ReportsFragment(dataSet);
-
-        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-
-
-        fragmentTransaction.add(R.id.main_activity_container, formFragment, "formFragment").hide(formFragment);
-        fragmentTransaction.add(R.id.main_activity_container, changeLocationFragment, "changeLocationFragment").hide(changeLocationFragment);
-        fragmentTransaction.add(R.id.main_activity_container, reportsFragment, "reportsFragment");
-        fragmentTransaction.commit();
-
-
-        if (formFragment == null)
-        {
-            Log.d("TAG", "onCreate: rage");
-        }
-
-        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
-        Log.d("mapTrack", "about to go in getlastlocation");
-        getLocationPermission();
-
-
-//        Log.d("FILE", "" + files[12]);
-
     }
-
+    
 
     public void loadReportsFromFiles()
     {
@@ -146,6 +147,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         String dirPath = this.getFilesDir().getAbsolutePath() + File.separator + "ReportsDir" + File.separator + "Reports";
         File directory = new File(dirPath);
         File[] files = directory.listFiles();
+        ReportObject holder;
 
         if (files == null)
         {
@@ -156,10 +158,15 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         dataSet = new ArrayList<>();
         for (int i = 0; i < files.length; i++)
         {
-            dataSet.add(ReportObject.readFromFile(this, files[i].getName()));
-            dataSet.get(i).fixLocation();
+            holder = ReportObject.readFromFile(this, files[i].getName());
+            if (holder != null)
+            {
+                dataSet.add(holder);
+                dataSet.get(i).fixLocation();
+            }
+
             Log.d("Method", "getReports, FileName:" + files[i].getName());
-            //Log.d("save", dataSet.get(i).getDate());
+
         }
 
         Log.d("Method", " out MainActivity: getReports");
@@ -170,13 +177,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     {
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setDisplayShowHomeEnabled(true);
-        title.setText("New Report");
-        formFragment.resetForm();
+        toolbarTitle.setText("New Report");
+        fragmentForm.resetForm();
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-        fragmentTransaction.hide(reportsFragment);
-        fragmentTransaction.show(formFragment);
+        fragmentTransaction.hide(fragmentHome);
+        fragmentTransaction.show(fragmentForm);
         fragmentTransaction.commit();
-        currentFragment = formFragment;
+        currentFragment = fragmentForm;
     }
 
     public void updateReport(ReportObject report)
@@ -186,14 +193,14 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setDisplayShowHomeEnabled(true);
-        title.setText("Update Report");
-        formFragment.resetForm();
-        formFragment.populateForm(report);
+        toolbarTitle.setText("Update Report");
+        fragmentForm.resetForm();
+        fragmentForm.populateForm(report);
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-        fragmentTransaction.hide(reportsFragment);
-        fragmentTransaction.show(formFragment);
+        fragmentTransaction.hide(fragmentHome);
+        fragmentTransaction.show(fragmentForm);
         fragmentTransaction.commit();
-        currentFragment = formFragment;
+        currentFragment = fragmentForm;
 
 
     }
@@ -207,7 +214,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         ReportObject.deleteReportFiles(this, report);
         dataSet.remove(report);
-        reportsFragment.updateReportsList(dataSet);
+        fragmentHome.updateReportsList(dataSet);
         return true;
     }
 
@@ -217,100 +224,160 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         Log.d("Method", " on MainActivity: loadReportsFragment");
         getSupportActionBar().setDisplayHomeAsUpEnabled(false);
         getSupportActionBar().show();
-        title.setText("Reports");
+        toolbarTitle.setText("Reports");
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-        fragmentTransaction.hide(formFragment);
+        fragmentTransaction.hide(fragmentForm);
 
         loadReportsFromFiles();
-        reportsFragment.updateReportsList(dataSet);
+        fragmentHome.updateReportsList(dataSet);
 
-        fragmentTransaction.show(reportsFragment);
+        fragmentTransaction.show(fragmentHome);
         fragmentTransaction.commit();
-        currentFragment = reportsFragment;
+        currentFragment = fragmentHome;
 
         Log.d("Method", " out MainActivity: loadReportsFragment");
 
     }
 
-    public void changeLocationStart(View view){
+    public void selectNewLocation(View view){
 
         getSupportActionBar().hide();
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-        fragmentTransaction.hide(formFragment);
-        fragmentTransaction.show(changeLocationFragment);
+        fragmentTransaction.hide(fragmentForm);
+        fragmentTransaction.show(fragmentSelectLocation);
         fragmentTransaction.commit();
-        currentFragment = changeLocationFragment;
-        changeLocationFragment.updateMap(latLng);
+        currentFragment = fragmentSelectLocation;
+        fragmentSelectLocation.updateMap(latLng);
     }
 
-    public void changeLocationEnd(LatLng location){
+    public void confirmNewLocation(LatLng location){
 
         getSupportActionBar().show();
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-        fragmentTransaction.hide(changeLocationFragment);
-        fragmentTransaction.show(formFragment);
+        fragmentTransaction.hide(fragmentSelectLocation);
+        fragmentTransaction.show(fragmentForm);
         fragmentTransaction.commit();
-        currentFragment = formFragment;
-        formFragment.updateMap(location);
+        currentFragment = fragmentForm;
+        fragmentForm.updateMap(location);
 
     }
 
+
+
+
+    //get users location and request appropiate permissions
+
+    @SuppressLint("MissingPermission")
+    private void getLastLocation() {
+        // check if permissions are given
+        if (checkPermissions()) {
+
+            // check if location is enabled
+            if (isLocationEnabled()) {
+
+                // getting last
+                // location from
+                // FusedLocationClient
+                // object
+               fusedLocationClient.getLastLocation().addOnCompleteListener(new OnCompleteListener<Location>() {
+                    @Override
+                    public void onComplete(@NonNull Task<Location> task) {
+                        lastKnownLocation = task.getResult();
+                        if (lastKnownLocation == null) {
+                            requestNewLocationData();
+                        } else {
+                            latLng = new LatLng(lastKnownLocation.getLatitude(), lastKnownLocation.getLongitude());
+                            fragmentForm.updateMap(latLng);
+                        }
+                    }
+                });
+            }
+            else {
+                Toast.makeText(this, "Please turn on" + " your location...", Toast.LENGTH_LONG).show();
+                Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+                startActivity(intent);
+            }
+        }
+        else {
+            // if permissions aren't available,
+            // request for permissions
+            requestPermissions();
+        }
+    }
+
+    @SuppressLint("MissingPermission")
+    private void requestNewLocationData() {
+
+        // Initializing LocationRequest
+        // object with appropriate methods
+        LocationRequest mLocationRequest = new LocationRequest();
+        mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+        mLocationRequest.setInterval(5);
+        mLocationRequest.setFastestInterval(0);
+        mLocationRequest.setNumUpdates(1);
+
+        // setting LocationRequest
+        // on FusedLocationClient
+       fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
+       fusedLocationClient.requestLocationUpdates(mLocationRequest, mLocationCallback, Looper.myLooper());
+    }
+
+    private LocationCallback mLocationCallback = new LocationCallback() {
+
+        @Override
+        public void onLocationResult(LocationResult locationResult) {
+            lastKnownLocation = locationResult.getLastLocation();
+
+            latLng = new LatLng(lastKnownLocation.getLatitude(), lastKnownLocation.getLongitude());
+            fragmentForm.updateMap(latLng);
+        }
+    };
+
+    // method to check for permissions
+    private boolean checkPermissions() {
+        return ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+
+        // If we want background location
+        // on Android 10.0 and higher,
+        // use:
+        // ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_BACKGROUND_LOCATION) == PackageManager.PERMISSION_GRANTED
+    }
+
+    // method to request for permissions
+    private void requestPermissions() {
+        ActivityCompat.requestPermissions(this, new String[]{
+                Manifest.permission.ACCESS_COARSE_LOCATION,
+                Manifest.permission.ACCESS_FINE_LOCATION}, PERMISSION_ID);
+    }
+
+    // method to check
+    // if location is enabled
+    private boolean isLocationEnabled() {
+        LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        return locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) || locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
+    }
+
+    // If everything is alright then
+    @Override
+    public void
+    onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
+        if (requestCode == PERMISSION_ID) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                getLastLocation();
+            }
+        }
+    }
 
     @Override
-    public void onMapReady(GoogleMap googleMap) {
-
+    public void onResume() {
+        super.onResume();
+        if (checkPermissions()) {
+            getLastLocation();
+        }
     }
 
-    public void getLastLocation() {
-
-        // Get last known recent location using new Google Play Services SDK (v11+)
-        FusedLocationProviderClient locationClient = getFusedLocationProviderClient(this);
-
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
-                && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-
-        }
-
-        try {
-
-            Task<Location> locationResult = fusedLocationProviderClient.getLastLocation();
-            locationResult.addOnCompleteListener(this, new OnCompleteListener<Location>() {
-                @Override
-                public void onComplete(@NonNull Task<Location> task) {
-                    if (task.isSuccessful()) {
-                        // Set the map's camera position to the current location of the device.
-                        lastKnownLocation = task.getResult();
-
-                        if(lastKnownLocation == null)
-                        Log.d("LOCATION", "isnull");
-
-                        latLng = new LatLng(lastKnownLocation.getLatitude(), lastKnownLocation.getLongitude());
-                        if (latLng == null)
-                        {
-                            Log.d("LOCATION", "onComplete: ");
-                        }
-                        Log.d("test", "onCreate: " + latLng);
-
-                        if (formFragment == null)
-                        {
-                            Log.d("fragment", "isnull");
-                        }
-                        Log.d("mapTrack", "about to update map");
-                       formFragment.updateMap(latLng);
-                    } else {
-                        Log.d("LOCATION", "Current location is null. Using defaults.");
-                        Log.e("LOCATION", "Exception: %s", task.getException());
-
-                    }
-
-                }
-            });
-
-        } catch (SecurityException e)  {
-            Log.e("Exception: %s", e.getMessage(), e);
-        }
-
-    }
 
     public void setLocationHolder(LatLng location)
     {
@@ -335,13 +402,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             case android.R.id.home:
                 getSupportActionBar().setDisplayHomeAsUpEnabled(false);
                 getSupportActionBar().show();
-                title.setText("Reports");
-                formFragment.resetForm();
+                toolbarTitle.setText("Reports");
+                fragmentForm.resetForm();
                 FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-                fragmentTransaction.hide(formFragment);
-                fragmentTransaction.show(reportsFragment);
+                fragmentTransaction.hide(fragmentForm);
+                fragmentTransaction.show(fragmentHome);
                 fragmentTransaction.commit();
-                currentFragment = reportsFragment;
+                currentFragment = fragmentHome;
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -360,42 +427,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     }
 
-    @Override
-    public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
 
-        Log.d("mapTrack", "onRequestPermissionsResult: ");
-        getLastLocation();
-
-    }
-
-    private void getLocationPermission() {
-
-
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.INTERNET)
-                != PackageManager.PERMISSION_GRANTED) {
-
-            ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.INTERNET},
-                    1);
-            // Permission is not granted
-            Log.d("MapDemoActivity", "Internet permission not granted");
-
-        }
-
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED) {
-
-            ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.ACCESS_COARSE_LOCATION},
-                    3);
-            Log.d("MapDemoActivity", "Coarse permission not granted");
-
-        }
-        else
-        {
-            getLastLocation();
-        }
-    }
 
 
 

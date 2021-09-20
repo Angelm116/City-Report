@@ -36,7 +36,6 @@ import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
-import com.android.volley.toolbox.Volley;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
@@ -46,19 +45,22 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
+import java.util.Map;
 
 import static android.app.Activity.RESULT_CANCELED;
 import static android.app.Activity.RESULT_OK;
 
 
-public class FormFragment extends Fragment implements PopupMenu.OnMenuItemClickListener, BackPressSupport{
+public class FragmentForm extends Fragment implements PopupMenu.OnMenuItemClickListener, BackPressSupport{
 
 
     NestedScrollView scrollView;
@@ -70,13 +72,14 @@ public class FormFragment extends Fragment implements PopupMenu.OnMenuItemClickL
 
     // Report
     ReportObject reportObject;
-    String date = null;
+    Calendar date = null;
     String description = "";
     String category = "";
     String nearStreet = "";
     LatLng location = null;
     ArrayList<Bitmap> photoArray;
     LoadingDialog dialog;
+    ReportLocation locationObject;
 
     //RadioGroup
     RadioGroup radioGroup;
@@ -88,10 +91,13 @@ public class FormFragment extends Fragment implements PopupMenu.OnMenuItemClickL
     TextView pictureAttached;
     GridLayout grid;
     Button submitButton;
+    Button cameraButton;
     
     //update report 
     ReportObject updateReport; 
     boolean isUpdate;
+
+    View rootView;
 
 
 
@@ -99,43 +105,64 @@ public class FormFragment extends Fragment implements PopupMenu.OnMenuItemClickL
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 
-        final View rootView = inflater.inflate(R.layout.fragment_form, container, false);
+        final View root = inflater.inflate(R.layout.fragment_form, container, false);
 
-//        Toolbar toolbar = rootView.findViewById(R.id.toolbar);
-//        setSupportActionBar(toolbar);
-
+        this.rootView = root;
         scrollView = rootView.findViewById(R.id.scrollFeed);
+        grid = rootView.findViewById(R.id.grid);
+        cameraButton = (Button) rootView.findViewById(R.id.add_picture_btn);
+        submitButton = (Button) rootView.findViewById(R.id.submit_btn);
+        pictureAttached = rootView.findViewById(R.id.picture_attached);
+        radioGroup = rootView.findViewById(R.id.radioGroup);
+        descriptionInput = rootView.findViewById(R.id.description_input);
+        mMapView = (MapView) rootView.findViewById(R.id.map);
 
         dialog = new LoadingDialog(getActivity());
 
-        grid = rootView.findViewById(R.id.grid);
-
-        Button cameraButton = (Button) rootView.findViewById(R.id.add_picture_btn);
-        submitButton = (Button) rootView.findViewById(R.id.submit_btn);
 
         photoArray = new ArrayList<>();
-        pictureAttached = rootView.findViewById(R.id.picture_attached);
         pictureAttached.setVisibility(View.INVISIBLE);
 
+
+        setUpGrid();
+        setUpCameraListener();
+        setUpSubmitListener();
+        setUpDescriptionListeners();
+        setUpRadioButtons();
+        setUpMap(savedInstanceState);
+        setUpRadioGroupListener();
+
+        return rootView;
+    }
+
+    private void setUpGrid()
+    {
+
+    }
+
+    private void setUpCameraListener()
+    {
         cameraButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
 
                 PopupMenu popup = new PopupMenu(getActivity().getApplicationContext(), v);
-                popup.setOnMenuItemClickListener(FormFragment.this);
+                popup.setOnMenuItemClickListener(FragmentForm.this);
                 popup.inflate(R.menu.add_photo_menu);
                 popup.show();
             }
         });
-
+    }
+    private void setUpSubmitListener()
+    {
         submitButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
 
                 if (isUpdate)
                 {
-                    setNearStreet(location);
-                   // updateReport();
+                    setLocationDetails(location);
+                    // updateReport();
                 }
                 else
                 {
@@ -144,9 +171,9 @@ public class FormFragment extends Fragment implements PopupMenu.OnMenuItemClickL
 
             }
         });
-
-
-        descriptionInput = rootView.findViewById(R.id.description_input);
+    }
+    private void setUpDescriptionListeners()
+    {
         descriptionInput.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
@@ -173,49 +200,40 @@ public class FormFragment extends Fragment implements PopupMenu.OnMenuItemClickL
                 }
             }
         });
+    }
 
+    private void setUpRadioGroupListener()
+    {
+        radioGroup.setOnCheckedChangeListener(
+                new RadioGroup.OnCheckedChangeListener() {
 
-        radioGroup = rootView.findViewById(R.id.radioGroup);
-        radioButtons = new ArrayList<>();
-        radioButtons.add((RadioButton)rootView.findViewById(R.id.category_1));
-        radioButtons.add((RadioButton)rootView.findViewById(R.id.category_2));
-        radioButtons.add((RadioButton)rootView.findViewById(R.id.category_3));
-        radioButtons.add((RadioButton)rootView.findViewById(R.id.category_4));
+                    @Override
+                    public void onCheckedChanged(RadioGroup group, int checkedId) {
 
-        categoryLink = new HashMap<>();
-        for (int i = 0; i < 4; i++){
-            categoryLink.put(radioButtons.get(i).getText().toString(), radioButtons.get(i));
-        }
+                        RadioButton radioButton = rootView.findViewById(checkedId);
 
-        radioGroup.setOnCheckedChangeListener( new RadioGroup.OnCheckedChangeListener() {
+                        if (radioButton != null && radioButton.isChecked())
+                        {
+                            selected = radioButton;
+                            category = radioButton.getText().toString();
+                            radioButton.setTextColor(getResources().getColor(R.color.white));
 
-                                                  @Override
-                                                  public void onCheckedChanged(RadioGroup group, int checkedId) {
+                            for (int i = 0; i < 4; i++)
+                            {
+                                if(!(radioButtons.get(i) == radioButton))
+                                {
+                                    radioButtons.get(i).setTextColor(getResources().getColor(R.color.black));
+                                }
+                            }
+                        }
 
-                                                      RadioButton radioButton = rootView.findViewById(checkedId);
-
-                                                      if (radioButton != null && radioButton.isChecked())
-                                                      {
-                                                          selected = radioButton;
-                                                          category = radioButton.getText().toString();
-                                                          radioButton.setTextColor(getResources().getColor(R.color.white));
-
-                                                          for (int i = 0; i < 4; i++)
-                                                          {
-                                                              if(!(radioButtons.get(i) == radioButton))
-                                                              {
-                                                                  radioButtons.get(i).setTextColor(getResources().getColor(R.color.black));
-                                                              }
-                                                          }
-                                                      }
-
-                                                  }
-                                              }
+                    }
+                }
         );
+    }
 
-
-
-        mMapView = (MapView) rootView.findViewById(R.id.map);
+    private void setUpMap(Bundle savedInstanceState)
+    {
         mMapView.onCreate(savedInstanceState);
 
         mMapView.onResume(); // needed to get the map to display immediately
@@ -233,9 +251,22 @@ public class FormFragment extends Fragment implements PopupMenu.OnMenuItemClickL
 
             }
         });
-
-        return rootView;
     }
+
+    private void setUpRadioButtons()
+    {
+        radioButtons = new ArrayList<>();
+        radioButtons.add((RadioButton)rootView.findViewById(R.id.category_1));
+        radioButtons.add((RadioButton)rootView.findViewById(R.id.category_2));
+        radioButtons.add((RadioButton)rootView.findViewById(R.id.category_3));
+        radioButtons.add((RadioButton)rootView.findViewById(R.id.category_4));
+
+        categoryLink = new HashMap<>();
+        for (int i = 0; i < 4; i++){
+            categoryLink.put(radioButtons.get(i).getText().toString(), radioButtons.get(i));
+        }
+    }
+
 
     @Override
     public void onResume() {
@@ -299,7 +330,6 @@ public class FormFragment extends Fragment implements PopupMenu.OnMenuItemClickL
 
         resetForm();
         ((MainActivity) getActivity()).loadReportsFragment();
-
         return true;
     }
 
@@ -329,7 +359,7 @@ public class FormFragment extends Fragment implements PopupMenu.OnMenuItemClickL
          date = null;
          description = "";
          category = "";
-         nearStreet = "";
+         locationObject = null;
          location = null;
          photoArray = null;
 
@@ -350,8 +380,8 @@ public class FormFragment extends Fragment implements PopupMenu.OnMenuItemClickL
         if (categoryIsSelected())
        {
 
-        reportObject = new ReportObject(nearStreet, date, photoArray, location, description, category);
-           Log.d("save", nearStreet + "888");
+        reportObject = new ReportObject(locationObject, date, photoArray, description, category);
+        reportObject.uploadToServer(getContext());
         reportObject.saveToFile(getContext());
         Log.d("save", "saveReport: saved");
 
@@ -365,7 +395,8 @@ public class FormFragment extends Fragment implements PopupMenu.OnMenuItemClickL
     // not the best approach need to figure out how to call setnearstreet and wait for the result without stopping main execution
     public void submitReport()
     {
-        setNearStreet(location);
+        setDate();
+        setLocationDetails(location);
 
     }
 
@@ -378,7 +409,7 @@ public class FormFragment extends Fragment implements PopupMenu.OnMenuItemClickL
         updateReport.setDescription(description);
         updateReport.setCategory(category);
         updateReport.setLocation(location);
-        updateReport.setNearStreet(nearStreet);
+        updateReport.setLocationObject(locationObject);
         // update file with new info.
         ReportObject.updateReportFile(getContext(), updateReport);
 
@@ -389,56 +420,90 @@ public class FormFragment extends Fragment implements PopupMenu.OnMenuItemClickL
 
     public void setDate()
     {
-        Calendar cal = Calendar.getInstance();
-        int year = cal.get(Calendar.YEAR); // get the current year
-        int month = cal.get(Calendar.MONTH) + 1; // month...
-        int day = cal.get(Calendar.DAY_OF_MONTH); // current day in the month
-        int hour = cal.get(Calendar.HOUR_OF_DAY);
-        int minute = cal.get(Calendar.MINUTE);
-        String am_pm = cal.get(Calendar.AM_PM) == Calendar.AM ? "AM" : "PM";
-
-        // sets your textview to e.g. 2012/03/15 for today
-
-        String monthS = month < 10 ? ("0" + month) : ("" + month);
-        String dayS = day < 10 ? ("0" + day) : ("" + day);
-        String hourS = hour < 10 ? ("0" + hour) : ("" + hour);
-        String minuteS = minute < 10 ? ("0" + minute) : ("" + minute);
-
-        date = (monthS + "/" + dayS + "/" + year + "  at " + hourS + ":" + minuteS + " " + am_pm);
-
-       // Log.d("TAG", date);
+        date = Calendar.getInstance();
     }
 
-    public void setNearStreet(LatLng latLng)
+    public void setLocationDetails(final LatLng latLng)
     {
         //Log.d("near", "setNearStreet: ");
 
         // Request neat street
-        RequestQueue queue = Volley.newRequestQueue(getContext());
+        RequestQueue queue = VolleySingleton.getInstance(getContext()).getQueue();
         String url = "https://maps.googleapis.com/maps/api/geocode/json?latlng=" + String.valueOf(latLng.latitude) + "," + String.valueOf(latLng.longitude) + "&key=AIzaSyAQw10ndgEutTniHm00lcLXAnZVbBFEweM";
 
-        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest
+
+
+        final JsonObjectRequest jsonObjectRequest = new JsonObjectRequest
                 (Request.Method.GET, url, null, new com.android.volley.Response.Listener<JSONObject>() {
 
                     // Process response
                     @Override
                     public void onResponse(JSONObject response) {
 
-                         //  Log.d("near", response.toString());
-                            //dialog.startLoadingDialog();
-                            //processStreetResponse(response);
-
                         try {
-                            String streetNumber = response.getJSONArray("results").getJSONObject(0).getJSONArray("address_components").getJSONObject(0).getString("short_name");
-                            String streetName = response.getJSONArray("results").getJSONObject(0).getJSONArray("address_components").getJSONObject(1).getString("short_name");
-                            String city = response.getJSONArray("results").getJSONObject(0).getJSONArray("address_components").getJSONObject(2).getString("short_name");
-                            String state = response.getJSONArray("results").getJSONObject(0).getJSONArray("address_components").getJSONObject(4).getString("short_name");
+                          Log.d("TAG", response.toString(5));
+//                            String country = response.getJSONArray("results").getJSONObject(1).getJSONArray("address_components").getJSONObject(5).getString("long_name");
+//                            String state = response.getJSONArray("results").getJSONObject(1).getJSONArray("address_components").getJSONObject(4).getString("short_name");
+//                            String county = response.getJSONArray("results").getJSONObject(1).getJSONArray("address_components").getJSONObject(3).getString("short_name");
+//                            String zipCode = response.getJSONArray("results").getJSONObject(1).getJSONArray("address_components").getJSONObject(6).getString("short_name");
+//                            String city = response.getJSONArray("results").getJSONObject(1).getJSONArray("address_components").getJSONObject(2).getString("short_name");
+//                            String streetNumber = response.getJSONArray("results").getJSONObject(1).getJSONArray("address_components").getJSONObject(0).getString("short_name");
+//                            String streetName = response.getJSONArray("results").getJSONObject(1).getJSONArray("address_components").getJSONObject(1).getString("short_name");
 
-                            nearStreet = streetNumber + " " + streetName + ", " + city + ", " + state;
 
-                           // Log.d("near", nearStreet);
+                            ArrayList<String> details = new ArrayList<>();
+                            Map map = new HashMap<String, Integer>();
 
-                            setDate();
+                            for (int i = 0; i < 7; i++)
+                            {
+                                details.add("");
+                            }
+
+                            map.put("country", 0);
+                            map.put("administrative_area_level_1", 1);
+                            map.put("administrative_area_level_2", 2);
+                            map.put("sublocality", 3);
+                            map.put("sublocality_level_1", 3);
+                            map.put("postal_code", 4);
+                            map.put("street_number", 5);
+                            map.put("route", 6);
+
+//        this.country = country;
+//        this.state = state
+//        this.county = county;
+//        this.city = city;
+//        this.zip = zip;
+//        this.streetNumber = streetNumber;
+//        this.streetName = streetName;
+//        this.latitude = latitude;
+//        this.longitude = longitude;
+
+                            JSONArray responseArray = response.getJSONArray("results").getJSONObject(1).getJSONArray("address_components");
+                            JSONObject objectHolder;
+                            JSONArray typesHolder;
+                            String idHolder;
+                            String detailHolder;
+                            int reponseSize = responseArray.length();
+                            for (int i = 0; i < reponseSize; i++)
+                            {
+                                objectHolder = responseArray.getJSONObject(i);
+                                typesHolder = objectHolder.getJSONArray("types");
+
+                                for (int j = 0; j < typesHolder.length(); j++)
+                                {
+                                    idHolder = typesHolder.getString(j);
+
+                                    if (map.containsKey(idHolder))
+                                    {
+                                        detailHolder = objectHolder.getString("short_name");
+                                        details.set((int)map.get(idHolder), detailHolder);
+                                        break;
+                                    }
+                                }
+                            }
+
+                            locationObject = new ReportLocation(details, latLng.latitude, latLng.longitude);
+
 
                             if (isUpdate)
                             {
@@ -604,17 +669,76 @@ public class FormFragment extends Fragment implements PopupMenu.OnMenuItemClickL
 
     private void addPhotoToGrid(Bitmap ImageBitmap)
     {
-        ImageView image = new ImageView(getContext());
+        final ImageView image = new ImageView(getContext());
         image.setImageBitmap(ImageBitmap);
         GridLayout.LayoutParams layoutParams = new GridLayout.LayoutParams(new ViewGroup.LayoutParams(dpToPixel(80), dpToPixel(100)));
         layoutParams.setMargins(dpToPixel(3), dpToPixel(3), dpToPixel(3), dpToPixel(3));
         image.setLayoutParams(layoutParams);
+
+        image.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v) {
+
+                // find out which image is this and delete from photoArray
+                // if the report
+
+                int position = grid.indexOfChild(image);
+
+                if (isUpdate)
+                {
+                    //figure out the name of the imagefile
+                    // add image to the tobedeleted array of the updateReport
+                     int photoArraySize = updateReport.getPhotoArray().size();
+
+                     if (position >= photoArraySize)
+                     {
+                         updateReport.getPhotosToAdd().remove(position - photoArraySize);
+                     }
+                     else
+                     {
+
+                         if( updateReport.getPhotoFileNames().size() == 0) // you added a photo but havent saved
+                         {
+                             updateReport.getPhotosToAdd().remove(position);
+                             updateReport.setPhotosToAdd(null);
+                         }
+                         else
+                         {
+                             updateReport.addPhotoToBeDeleted(updateReport.getPhotoFileNames().get(position));
+                             updateReport.getPhotoFileNames().remove(position);
+                             updateReport.getPhotoArray().remove(position);
+                         }
+
+                     }
+                     // get the name of the file
+                                // get array holding the photos of the report
+                    // remove view from grid and update grid
+                    // update 
+
+                }
+                else
+                {
+                    photoArray.remove(position);
+                }
+
+                grid.removeViewAt(position);
+                setPhotoCountText(grid.getChildCount());
+
+
+                return true;
+            }
+        });
+
         grid.addView(image);
     }
 
     private void setPhotoCountText(int count)
     {
-        if (count == 1)
+        if (count == 0)
+        {
+            pictureAttached.setVisibility(View.INVISIBLE);
+        }
+        else if(count == 1)
         {
             pictureAttached.setText("1 Picture Attached");
         }

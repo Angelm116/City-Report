@@ -86,7 +86,7 @@
                     android:height="30dp"
                     android:background="@drawable/rounded_button_background2"
                     android:fontFamily="sans-serif-medium"
-                    android:onClick="changeLocationStart"
+                    android:onClick="selectNewLocation"
                     android:text="Change Location"
                     android:textColor="#fff" />
 
