@@ -10,6 +10,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
@@ -44,7 +45,16 @@ public class FragmentHome extends Fragment {
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                ((MainActivity) getActivity()).startNewReport();
+                // Check that the User's last known location is not equal to null
+                if(((MainActivity) getActivity()).getUserLastKnownLocation() != null)
+                {
+                    ((MainActivity) getActivity()).startNewReport();
+                }
+                else
+                {
+                    Toast.makeText(getActivity(), "Please turn on" + " your wifi connection...", Toast.LENGTH_LONG).show();
+                }
+
             }
         });
 

@@ -5,6 +5,7 @@ import com.google.android.gms.maps.model.LatLng;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 public class ReportLocation implements Serializable {
 
@@ -31,15 +32,15 @@ public class ReportLocation implements Serializable {
         this.longitude = longitude;
     }
 
-    public ReportLocation(ArrayList<String> details, double latitude, double longitude)
+    public ReportLocation(HashMap<String, String> details, double latitude, double longitude)
     {
-        this.country = details.get(0);
-        this.state = details.get(1);
-        this.county = details.get(2);
-        this.city = details.get(3);
-        this.zip = details.get(4);
-        this.streetNumber = details.get(5);
-        this.streetName = details.get(6);
+        this.country = details.get("country");
+        this.state = details.get("state");
+        this.county = details.get("county");
+        this.city = details.get("city");
+        this.zip = details.get("zip");
+        this.streetNumber = details.get("street_number");
+        this.streetName = details.get("street_name");
         this.latitude = latitude;
         this.longitude = longitude;
     }
@@ -116,9 +117,23 @@ public class ReportLocation implements Serializable {
         this.longitude = longitude;
     }
 
+    public void setLatLng(LatLng latLng) {
+        this.latitude = latLng.latitude;
+        this.longitude = latLng.longitude;
+    }
+
     public String getFormattedAddress()
     {
-        return streetNumber + " " + streetName + ", " + city + " " + state + " " + zip;
+        String formattedAddress = "";
+
+        formattedAddress += streetNumber == null ? "" : streetNumber + " ";
+        formattedAddress += streetName == null ? "" : streetName + ", ";
+        formattedAddress += city == null ? "" : city + " ";
+        formattedAddress += state == null ? "" : state + " ";
+        formattedAddress += zip == null ? "" : zip;
+
+
+        return formattedAddress.trim();
     }
 
     public String getStreetAddress()

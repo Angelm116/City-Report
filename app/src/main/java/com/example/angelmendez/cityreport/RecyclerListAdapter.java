@@ -23,6 +23,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Random;
 
@@ -81,20 +82,26 @@ public class RecyclerListAdapter extends RecyclerView.Adapter<RecyclerViewHolder
     public void onBindViewHolder(@NonNull RecyclerViewHolder holder, final int position) {
 
 
-        holder.nearStreetText.setText("Near " + dataSet.get(position).getLocationObject().getFormattedAddress());
-        holder.dateText.setText("On " + dataSet.get(position).getDateTimeForDisplay());
+        // Format date and time to be displayed in the report
+        SimpleDateFormat simpleDateFormat;
+        simpleDateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss aaa z");
+        String dateTime = simpleDateFormat.format(dataSet.get(position).getDate().getTime());
 
-        if (dataSet.get(position).getPhotoArray() == null)
+        holder.dateText.setText("On " + dateTime);
+        holder.nearStreetText.setText("Near " + dataSet.get(position).getLocationObject().getFormattedAddress());
+
+        // TODO MAKE SURE THAT ITS SET TO NULL BEFORE SAVED SO THAT YOU ONLY HAVE TO CHECK FOR NULL HERE
+        if (dataSet.get(position).getPhotoArray() != null && dataSet.get(position).getPhotoArray().size() > 0)
+        {
+            Bitmap bitmap = dataSet.get(position).getPhotoArray().get(0);
+            holder.photo.setImageBitmap(Bitmap.createScaledBitmap(bitmap, bitmap.getWidth(), bitmap.getHeight(), false));
+        }
+        else
         {
             String uri = "@drawable/no_image_available";
             int imageResource = context.getResources().getIdentifier(uri, null, context.getPackageName());
             Drawable noPhotoAvailble = context.getResources().getDrawable(imageResource);
             holder.photo.setImageDrawable(noPhotoAvailble);
-        }
-        else
-        {
-            Bitmap bitmap = dataSet.get(position).getPhotoArray().get(0);
-            holder.photo.setImageBitmap(Bitmap.createScaledBitmap(bitmap, bitmap.getWidth(), bitmap.getHeight(), false));
         }
 
         holder.shareButton.setOnClickListener(new View.OnClickListener() {
@@ -131,7 +138,7 @@ public class RecyclerListAdapter extends RecyclerView.Adapter<RecyclerViewHolder
         File[] photoFiles = photoDir.listFiles();
 
         // location
-        String uri = "http://maps.google.com/maps?saddr=" + dataSet.get(position).getLocation().latitude +","+ dataSet.get(position).getLocation().longitude;
+        String uri = "http://maps.google.com/maps?saddr=" + dataSet.get(position).getLocationObject().getLatitude() +","+ dataSet.get(position).getLocationObject().getLongitude();
 
         // category
        // String category = "Report of type: " + dataSet.get(position).getCategory() + " in this location";
