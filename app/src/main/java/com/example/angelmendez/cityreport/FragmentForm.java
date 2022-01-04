@@ -52,9 +52,7 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.Map;
 
 import static android.app.Activity.RESULT_CANCELED;
 import static android.app.Activity.RESULT_OK;
@@ -64,9 +62,8 @@ public class FragmentForm extends Fragment implements PopupMenu.OnMenuItemClickL
 
 
 
-    // Map
+    // Map related variables
     MapView mMapView;
-    private GoogleMap googleMap;
     Marker marker;
 
     // Report Fields
@@ -74,8 +71,9 @@ public class FragmentForm extends Fragment implements PopupMenu.OnMenuItemClickL
     LatLng markerLocation = null;
     ReportLocation locationObject;
     ReportObject currentReport;
+    boolean isUpdate;
 
-    //RadioGroup
+    //RadioGroup variables
     RadioGroup radioGroup;
     HashMap<String, RadioButton> categoryLink; //given the title of a category, find the radiobutton object
     RadioButton selected;
@@ -90,15 +88,7 @@ public class FragmentForm extends Fragment implements PopupMenu.OnMenuItemClickL
     NestedScrollView scrollView;
     LoadingDialog dialog;
 
-    //update report 
-    ReportObject updateReport; 
-    boolean isUpdate;
-
     View rootView;
-
-
-
-
 
 
     @Override
@@ -115,7 +105,6 @@ public class FragmentForm extends Fragment implements PopupMenu.OnMenuItemClickL
         pictureAttached = rootView.findViewById(R.id.picture_attached);
         radioGroup = rootView.findViewById(R.id.radioGroup);
         descriptionInput = rootView.findViewById(R.id.description_input);
-        mMapView = (MapView) rootView.findViewById(R.id.map);
         dialog = new LoadingDialog(getActivity());
 
         currentReport = new ReportObject(null, null, null, "", "", getContext());
@@ -124,8 +113,6 @@ public class FragmentForm extends Fragment implements PopupMenu.OnMenuItemClickL
         // Make the attached pictures counter invisible until there are attached pictures
         pictureAttached.setVisibility(View.INVISIBLE);
 
-
-        setUpGrid();
 
         // Listener for addPictureButton
         // Any time the addPictureButton is clicked, display the menu with the options to add pictures
@@ -239,6 +226,7 @@ public class FragmentForm extends Fragment implements PopupMenu.OnMenuItemClickL
 
 
         // Map setup
+        mMapView = (MapView) rootView.findViewById(R.id.fragment_form_MapView);
         mMapView.onCreate(savedInstanceState);
         mMapView.onResume(); // needed to get the map to display immediately
 
@@ -248,25 +236,9 @@ public class FragmentForm extends Fragment implements PopupMenu.OnMenuItemClickL
             e.printStackTrace();
         }
 
-        mMapView.getMapAsync(new OnMapReadyCallback() {
-            @Override
-            public void onMapReady(GoogleMap mMap) {
-                googleMap = mMap;
-
-            }
-        });
-
-
 
         return rootView;
     }
-
-    private void setUpGrid()
-    {
-
-    }
-
-
 
 
     // This function populates the form with the information of a given report
@@ -357,8 +329,9 @@ public class FragmentForm extends Fragment implements PopupMenu.OnMenuItemClickL
             date = Calendar.getInstance();
 
             currentReport.setDate(Calendar.getInstance());
-            currentReport.uploadToServer();
-            currentReport.saveToFile();
+            currentReport.uploadToServer(getContext());
+            //currentReport.saveToFile();
+            ReportObject.saveToFile(currentReport);
 
             // Load home fragment
             ((MainActivity) getActivity()).loadHomeFragment();
@@ -368,8 +341,9 @@ public class FragmentForm extends Fragment implements PopupMenu.OnMenuItemClickL
 
     public void updateReport()
     {
+        Log.d("PHOTOLENGTH", "" + currentReport.getPhotoArray().size());
         // update file with new info.
-        ReportObject.updateReportFile(getContext(), currentReport);
+        ReportObject.saveToFile(currentReport);
 
         // load home fragment
         ((MainActivity) getActivity()).loadHomeFragment();
@@ -496,7 +470,7 @@ public class FragmentForm extends Fragment implements PopupMenu.OnMenuItemClickL
             @Override
             public void onMapReady(GoogleMap mMap) {
 
-                googleMap = mMap;
+                GoogleMap googleMap = mMap;
                 FragmentForm.this.markerLocation = markerLocation;
 
                 if (marker != null)
@@ -506,11 +480,11 @@ public class FragmentForm extends Fragment implements PopupMenu.OnMenuItemClickL
 
                 marker = googleMap.addMarker(new MarkerOptions().position(FragmentForm.this.markerLocation).title("Current Location").draggable(false));
 
-                float zoomLevel = 18.5f; //This goes up to 21
+                float zoomLevel = 18.0f; //This goes up to 21
                 googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(FragmentForm.this.markerLocation, zoomLevel));
 
                 googleMap.getUiSettings().setAllGesturesEnabled(false);
-
+                googleMap.getUiSettings().setMapToolbarEnabled(false);
             }
         });
 

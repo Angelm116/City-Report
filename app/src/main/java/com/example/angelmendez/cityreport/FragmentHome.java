@@ -15,6 +15,7 @@ import android.widget.Toast;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.util.ArrayList;
+import java.util.Set;
 
 
 public class FragmentHome extends Fragment {
@@ -22,25 +23,23 @@ public class FragmentHome extends Fragment {
 
     private RecyclerView recyclerView;
     private RecyclerListAdapter adapter;
-    ArrayList<ReportObject> reportObject;
+    ArrayList<ReportObject> reportObjectList;
 
-    public FragmentHome(ArrayList<ReportObject> reportObject) {
+    public FragmentHome(ArrayList<ReportObject> reportObjectList) {
 
-        this.reportObject = reportObject;
+        this.reportObjectList = reportObjectList;
     }
 
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
 
-    }
-
+    // This function is called when the fragment displays
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
 
+        // Inflate the layout of this fragment
         View view = inflater.inflate(R.layout.fragment_reports, container, false);
 
+        // Set up the floating action button
         FloatingActionButton fab = view.findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -58,28 +57,30 @@ public class FragmentHome extends Fragment {
             }
         });
 
+        // set up RecyclerView
         recyclerView = view.findViewById(R.id.recyclerview);
         recyclerView.setHasFixedSize(true);
-        recyclerView.setLayoutManager(new LinearLayoutManager(view.getContext()));
+        recyclerView.setLayoutManager(new LinearLayoutManager(view.getContext())); // TODO IS THIS NEEDED?
 
-        adapter = new RecyclerListAdapter(reportObject, getContext(), recyclerView, (MainActivity)this.getActivity());
+        // set up the adapter for the RecyclerView
+        adapter = new RecyclerListAdapter(reportObjectList, getContext(), recyclerView, (MainActivity)this.getActivity());
         recyclerView.setAdapter(adapter);
         recyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
-       // getReports();
 
-        // Inflate the layout for this fragment
+
         return view;
     }
 
+    // Called whenever a new report is added
+    // updates the list to reflect the change in the list of reports
     public void updateReportsList(ArrayList<ReportObject> reports)
     {
-        Log.d("Method", "on ReportsFragment: updateReportsList()");
-        Log.d("Method", "on ReportsFragment: updateReportsList(), list size:" + reports.size());
+
 
         adapter.setData(reports);
         adapter.notifyDataSetChanged();
 
-        // Moves the list to the last report
+        // Move the list to the last report
         recyclerView.post(new Runnable() {
             @Override
             public void run() {
@@ -87,10 +88,9 @@ public class FragmentHome extends Fragment {
                 if (adapter.getItemCount() > 0) {
                     recyclerView.smoothScrollToPosition(adapter.getItemCount() - 1);
                 }
+
             }
         });
-
-        Log.d("Method", "out ReportsFragment: updateReportsList()");
     }
 
 

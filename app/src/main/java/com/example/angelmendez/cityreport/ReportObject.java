@@ -32,24 +32,22 @@ public class ReportObject implements Serializable {
 
     //private static final long serialVersionUID = 6529685098267757690L;
 
-    private final String PARENT_DIR_PATH;
-    private final String REPORTS_DIR_PATH;
-    private final String PHOTOS_DIR_PATH;
+    private static String PARENT_DIR_PATH;
+    private static String REPORTS_DIR_PATH;
+    private static String PHOTOS_DIR_PATH;
 
     private Calendar date;
     private transient ArrayList<Bitmap> photoArray; // Bitmaps are not serielizable
     private String description;
     private String category;
-    private String fileName;
+    private String fileName; // name of the file containing the report in persistent storage
     private String photoDirectoryName;
     private ReportLocation locationObject;
 
-    private transient Context context;
 
     public ReportObject(
             ReportLocation locationObject, Calendar date, ArrayList<Bitmap> photoArray, String description, String category, Context context)
     {
-        //this.nearStreet = street;
         this.locationObject = locationObject;
         this.date = date;
         this.photoArray = photoArray;
@@ -57,106 +55,79 @@ public class ReportObject implements Serializable {
         this.category = category;
         this.fileName = generateFileName();
         this.photoDirectoryName = generateFileName() + "_DIR";
-        this.context = context;
-
-        PARENT_DIR_PATH =  context.getFilesDir().getAbsolutePath() + File.separator + "ReportsDir";
-        REPORTS_DIR_PATH = PARENT_DIR_PATH + File.separator + "Reports";
-        PHOTOS_DIR_PATH =  PARENT_DIR_PATH + File.separator + "ReportPhotos";
 
     }
 
     // Getter Methods
 
-    public Context getContext(){return this.context;}
-
     public ArrayList<Bitmap> getPhotoArray() {
         return photoArray;
     }
-
     public String getPhotoDirectoryName() {
         return photoDirectoryName;
     }
-
     public String getFileName() {
         return fileName;
     }
-
     public Calendar getDate() {
         return date;
     }
-
     public ReportLocation getLocationObject() {
         return locationObject;
     }
-
     public String getDescription() {
         return description;
     }
-
     public String getCategory() {
         return category;
     }
-
+    public String getPhotoDirPath(){return PHOTOS_DIR_PATH + File.separator + photoDirectoryName;}
+    public String getReportDirPath(){return REPORTS_DIR_PATH + File.separator + fileName;}
 
     // Setter Methods
-
-    public void setContext(Context context){this.context = context;}
-    public void setPhotoDirectoryName(String string)
-    {
-        this.photoDirectoryName = string;
-    }
 
     public void setPhotoArray(ArrayList<Bitmap> photoArray) {
         this.photoArray = photoArray;
     }
-
-    public void setFileName(String fileName) {
-        this.fileName = fileName;
-    }
-
     public void setDate(Calendar date) {
         this.date = date;
     }
-
-    public void setLocationObject(ReportLocation locationObject) {
-        this.locationObject = locationObject;
-    }
-
+    public void setLocationObject(ReportLocation locationObject) { this.locationObject = locationObject; }
     public void setDescription(String description) {
         this.description = description;
     }
-
     public void setCategory(String category) {
         this.category = category;
     }
 
 
+    // This function saves or updates the given report in persistent storage
+    public static void saveToFile(ReportObject report) {
 
-    public void saveToFile() {
+        // Check if the report object has any photos attached and save them to persistent storage.
+        if (report.getPhotoArray() != null && report.getPhotoArray().size() != 0)
+        {
+            // Delete any photos that the report has in persistent storage
+            File reportPhotoDir = new File(report.getPhotoDirPath());
+            File[] photoFiles = reportPhotoDir.listFiles();
 
-        // If photos were added to the report, save them to persistent storage
-        if (photoArray != null && photoArray.size() != 0) {
-
-            // Create a photo directory for this report, if doesnt currently exist
-            String filePath = PHOTOS_DIR_PATH + File.separator + photoDirectoryName;
-            File reportPhotoDir = new File(filePath);
-
-            if (!reportPhotoDir.exists()) {
-                reportPhotoDir.mkdirs();
+            for (int i = 0; i < photoFiles.length; i++)
+            {
+                photoFiles[i].delete();
             }
 
-            String fileName;
-            FileOutputStream fos = null;
-
+            // Save all the photos in the report's photoArray to persistent storage.
             try {
-                for(int i = 0; i < photoArray.size(); i++)
-                {
-                    fileName = filePath + File.separator + generateFileName() + ".jpg";
-                    fos = new FileOutputStream(new File(fileName));
-                    photoArray.get(i).compress(Bitmap.CompressFormat.JPEG, 90, fos);
-                }
+                String fileName;
+                FileOutputStream fileOutputStream;
 
-                fos.close();
+                for(int i = 0; i < report.getPhotoArray().size(); i++)
+                {
+                    fileName = report.getPhotoDirPath() + File.separator + generateFileName() + ".jpg";
+                    fileOutputStream = new FileOutputStream(new File(fileName));
+                    report.getPhotoArray().get(i).compress(Bitmap.CompressFormat.JPEG, 90, fileOutputStream);
+                    fileOutputStream.close();
+                }
 
             } catch (FileNotFoundException e) {
                 e.printStackTrace();
@@ -165,32 +136,30 @@ public class ReportObject implements Serializable {
             }
 
         }
-        else // TODO SET DELETE THIS ELSE STATEMENT, CHECK PARTS OF THE CODE THAT RELY ON THIS
-        {
-            photoDirectoryName = null;
-        }
 
+        // Save the form portion of the report to persistent storage.
         try {
 
-            String filePath =  REPORTS_DIR_PATH + File.separator + fileName;
+            File file = new File(report.getReportDirPath());
 
-            FileOutputStream fileOutputStream = new FileOutputStream(new File(filePath));
+            FileOutputStream fileOutputStream = new FileOutputStream(file, false);
             ObjectOutputStream objectOutputStream = new ObjectOutputStream(fileOutputStream);
 
-            objectOutputStream.writeObject(this);
+            objectOutputStream.writeObject(report);
 
+            objectOutputStream.flush();
             objectOutputStream.close();
+            fileOutputStream.flush();
             fileOutputStream.close();
-
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    public void uploadToServer()
-    {
+    // TODO: UPDATE THIS FUNCTION TO REFLECT THE NEW API call.
+    public void uploadToServer(Context context) {
         // URL of server and API call to upload the current report
-        String url = "http://18.217.120.94/api/upload-report";
+        String url = "http://18.116.1.55/api/upload-report";
 
         // Create JSON object for the report using a hashmap
         Map map = new HashMap();
@@ -238,139 +207,27 @@ public class ReportObject implements Serializable {
         // Access the RequestQueue through the Volley singleton class.
         VolleySingleton.getInstance(context).getQueue().add(jsonObjectRequest);
     }
-    public static ReportObject readFromFile(Context context, String fileName) {
 
-        ReportObject reportObject = null;
-        try {
-            String dirPath =  context.getFilesDir().getAbsolutePath() + File.separator + "ReportsDir" + File.separator + "Reports" + File.separator + fileName;
-            File file = new File(dirPath);
-            FileInputStream fileInputStream = new FileInputStream(file);
-            ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream);
-            reportObject = (ReportObject) objectInputStream.readObject();
-            objectInputStream.close();
-            fileInputStream.close();
-        } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
-            Log.d("File", e.toString());
-        }
+    // This function deletes all the files associated with the given report
+    public static void deleteReportFiles(ReportObject report) {
+        // delete photo files
+        File photoDirectory = new File(report.getPhotoDirPath());
+        File[] photoFiles = photoDirectory.listFiles();
 
-
-        if (reportObject != null && reportObject.getPhotoDirectoryName() != null) {
-
-            ArrayList<Bitmap> photos = new ArrayList<>();
-            String photoDirPath = context.getFilesDir().getAbsolutePath() + File.separator + "ReportsDir" + File.separator + "ReportPhotos" + File.separator + reportObject.getPhotoDirectoryName();
-            File photoDir  = new File(photoDirPath);
-            File[] photoFiles = photoDir.listFiles();
-            try {
-
-                for (int i = 0; i < photoFiles.length; i++)
-                {
-                    photos.add(BitmapFactory.decodeStream(new FileInputStream(photoFiles[i])));
-                }
-                reportObject.setPhotoArray(photos);
-
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
-            }
-
-        }
-
-        reportObject.setContext(context);
-        return reportObject;
-    }
-
-    public static void deleteReportFiles(Context context, ReportObject report)
-    {
-        String dirPath;
-        File fileHolder;
-
-        // delete report form
-        dirPath = context.getFilesDir().getAbsolutePath() + File.separator + "ReportsDir" + File.separator + "Reports" + File.separator + report.getFileName();
-        fileHolder = new File(dirPath);
-        fileHolder.delete();
-
-        // delete photos directory
-        dirPath = context.getFilesDir().getAbsolutePath() + File.separator + "ReportsDir" + File.separator + "ReportPhotos" + File.separator + report.getPhotoDirectoryName();
-        fileHolder = new File(dirPath);
-        fileHolder.delete();
-
-    }
-
-    public static void updateReportFile(Context context, ReportObject report) {
-        // the deletion and addition to the photos array should be done before getting here
-        // here we will only update the file for the object, the update of the object itself takes place somewhere else
-
-        FileOutputStream fos = null;
-        String dirPath = context.getFilesDir().getAbsolutePath() + File.separator + "ReportsDir" + File.separator + "ReportPhotos" + File.separator + report.getPhotoDirectoryName();
-
-       //  if photodirname is null, initialize it
-        if (report.getPhotoDirectoryName() == null) {
-
-            report.setPhotoDirectoryName(generateFileName() + "_DIR");
-            dirPath = context.getFilesDir().getAbsolutePath() + File.separator + "ReportsDir" + File.separator + "ReportPhotos" + File.separator + report.getPhotoDirectoryName();
-            File reportPhotoDir = new File(dirPath);
-
-            if (!reportPhotoDir.exists()) {                  // if the report happens to exist this could cause trouble, figure out what to do if it fails
-                reportPhotoDir.mkdirs();
-            }
-        }
-
-        // if there is something in the photoarray, delete all of the photos in the files, and add everything in the photoarray to the files.
-        if (report.getPhotoArray() != null && report.getPhotoArray().size() != 0)
+        for (int i = 0; i < photoFiles.length; i++)
         {
-            // delete all pictures
-            File reportPhotoDir = new File(dirPath);
-            File[] files = reportPhotoDir.listFiles();
-            for (int i = 0; i < files.length; i++)
-            {
-                files[i].delete();
-            }
-
-            // add pictures
-            String fileName;
-            File filePhoto;
-
-            try {
-                for(int i = 0; i < report.getPhotoArray().size(); i++)
-                {
-                    fileName = dirPath + File.separator + generateFileName() + ".jpg";
-                    filePhoto = new File(fileName);
-                    fos = new FileOutputStream(filePhoto);
-                    report.getPhotoArray().get(i).compress(Bitmap.CompressFormat.JPEG, 90, fos);
-                }
-
-                fos.close();
-
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
+            photoFiles[i].delete();
         }
 
+        // delete photo directory
+        photoDirectory.delete();
 
-        //update report form, which is inside of the reports directory
-        try {
-            dirPath = context.getFilesDir().getAbsolutePath() + File.separator + "ReportsDir" + File.separator + "Reports" + File.separator + report.getFileName();
-            // File file = new File(dirPath);
-            //file.delete();
-
-            new FileOutputStream(dirPath).close();
-            File file = new File(dirPath);
-
-            FileOutputStream fileOutputStream = new FileOutputStream(file, false);
-            ObjectOutputStream objectOutputStream = new ObjectOutputStream(fileOutputStream);
-            objectOutputStream.writeObject(report);
-            objectOutputStream.flush();
-            objectOutputStream.close();
-            fileOutputStream.flush();
-            fileOutputStream.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        // delete report's form file
+        File formFile = new File(report.getReportDirPath());
+        formFile.delete();
     }
 
+    // This function is used to generate random file names
     public static String generateFileName() {
         Random generator = new Random();
         StringBuilder randomStringBuilder = new StringBuilder();
@@ -398,5 +255,123 @@ public class ReportObject implements Serializable {
             randomStringBuilder.append(tempChar);
         }
         return randomStringBuilder.toString();
+    }
+
+    // This function creates a ReportObject from the given file
+    public static ReportObject readFromFile(String fileName) {
+
+        ReportObject reportObject = null;
+        try {
+            String dirPath =  ReportObject.REPORTS_DIR_PATH + File.separator + fileName;
+            File file = new File(dirPath);
+            FileInputStream fileInputStream = new FileInputStream(file);
+            ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream);
+            reportObject = (ReportObject) objectInputStream.readObject();
+            objectInputStream.close();
+            fileInputStream.close();
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+            Log.d("File", e.toString());
+        }
+
+
+        String photoDirPath = ReportObject.PHOTOS_DIR_PATH + File.separator + reportObject.getPhotoDirectoryName();
+        File photoDir  = new File(photoDirPath);
+        File[] photoFiles = photoDir.listFiles();
+
+        if (reportObject != null && photoFiles != null) {
+
+            ArrayList<Bitmap> photos = new ArrayList<>();
+
+            try {
+
+                for (int i = 0; i < photoFiles.length; i++)
+                {
+                    photos.add(BitmapFactory.decodeStream(new FileInputStream(photoFiles[i])));
+                }
+                reportObject.setPhotoArray(photos);
+
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            }
+
+        }
+
+
+        return reportObject;
+    }
+
+    // This functions fetches the reports in persistent storage and returns them as an ArrayList of ReportObjects
+    public static ArrayList loadReportsFromFiles() {
+        // Store all the files inside of ReportsDir/Reports in an array, files
+        File directory = new File(ReportObject.REPORTS_DIR_PATH);
+
+        // Get a list of files in the directory
+        File[] files = directory.listFiles();
+        ReportObject holder;
+
+        // Check if list is empty
+        if (files == null)
+        {
+            Log.d("loadReportsFromFiles", "There are no reports in storage");
+            return null;
+        }
+
+        // Turn the list of files into a list of ReportObjects
+        ArrayList<ReportObject> reportList = new ArrayList<>();
+
+        for (int i = 0; i < files.length; i++)
+        {
+            // deserialize the file into a ReportObject
+            holder = ReportObject.readFromFile(files[i].getName());
+
+            // Check that it didnt fail
+            if (holder != null)
+            {
+                reportList.add(holder);  // add to list
+            }
+
+            Log.d("loadReportsFromFiles", "getReports, FileName:" + files[i].getName());
+            Log.d("SAVED", "PULLED, FileName:" + files[i].getName());
+        }
+
+        return reportList;
+    }
+
+    // this function creates the directories where the reports are stored in the device's persistent storage
+    public static void createDirectories(Context context)
+    {
+        PARENT_DIR_PATH =  context.getFilesDir().getAbsolutePath() + File.separator + "ReportsDir";
+        REPORTS_DIR_PATH = PARENT_DIR_PATH + File.separator + "Reports";
+        PHOTOS_DIR_PATH =  PARENT_DIR_PATH + File.separator + "ReportPhotos";
+
+        File fileHolder;
+
+        // Create the parent directory of the reports
+        final String PARENT_DIR_PATH = context.getFilesDir().getAbsolutePath() + File.separator + "ReportsDir";
+        fileHolder = new File(PARENT_DIR_PATH);
+
+        if (!fileHolder.exists()) {
+            fileHolder.mkdirs();
+            Log.d("createDirectories", "Created ReportsDir Directory");
+        }
+
+        // Within parent directory, create Reports directory to store report forms
+        final String REPORT_DIR_PATH = PARENT_DIR_PATH + File.separator + "Reports";
+        fileHolder = new File(REPORT_DIR_PATH);
+
+        if (!fileHolder.exists()) {
+            fileHolder.mkdirs();
+            Log.d("createDirectories", "Created Reports Directory inside of ReportsDir Directory");
+        }
+
+        // Within parent directory, create ReportPhotos directory to store the photos associated with each form
+        final String PHOTO_DIR_PATH = PARENT_DIR_PATH + File.separator + "ReportPhotos";
+        fileHolder = new File(PHOTO_DIR_PATH);
+
+        if (!fileHolder.exists()) {
+            fileHolder.mkdirs();
+            Log.d("createDirectories", "Created ReportPhotos Directory inside of ReportsDir Directory");
+        }
     }
 }

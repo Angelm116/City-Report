@@ -20,130 +20,104 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+import java.util.Map;
 
-public class FragmentSelectLocation extends Fragment implements OnMapReadyCallback, BackPressSupport {
+
+public class FragmentSelectLocation extends Fragment implements BackPressSupport {
 
 
     private GoogleMap mMap;
     private MapView mMapView;
-    private View mView;
-    private LatLng locationIn;
-    private LatLng locationOut;
+    private LatLng newLocation;
     Marker marker;
 
 
     private OnFragmentInteractionListener mListener;
 
-    // constructor for the fragment, ignore
-    public FragmentSelectLocation() {
-    }
 
-
+    // Inflates the layout for this fragment
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+
         // Inflate the layout for this fragment
-        mView = inflater.inflate(R.layout.fragment_change_location, container, false);
-
-        Button button = (Button)mView.findViewById(R.id.button);
-
-
-        button.setOnClickListener(new View.OnClickListener()
-                                  {
-                                      @Override
-                                      public void onClick(View v) {
-                                          marker.remove();
-                                          ((MainActivity)getActivity()).confirmNewLocation(locationOut);
-                                      }
-                                  }
-                );
-
+        View mView = inflater.inflate(R.layout.fragment_change_location, container, false);
 
         return mView;
     }
 
-    public boolean onBackPressed() {
-        marker.remove();
-        ((MainActivity)getActivity()).confirmNewLocation(locationOut);
-        return true;
-    }
-
-
+    // Gets called after the layout is fully inflated
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        mMapView = (MapView) mView.findViewById(R.id.map);
+        // Button to select new location
+        Button button = (Button) view.findViewById(R.id.button);
 
-            mMapView.onCreate(null);
-            mMapView.onResume();
-            mMapView.getMapAsync(this);
+        // When the button is clicked, remove the marker and confirm the new location.
+        button.setOnClickListener(new View.OnClickListener() {
+                                      @Override
+                                      public void onClick(View v) {
+                                          marker.remove();
+                                          ((MainActivity)getActivity()).confirmNewLocation(newLocation);
+                                      }
+                                  }
+        );
 
+
+        // View that contains the map.
+        mMapView = (MapView) view.findViewById(R.id.fragment_change_MapView);
+        mMapView.onCreate(null);
+        mMapView.onResume();
+
+        mMapView.getMapAsync(new OnMapReadyCallback() {
+            @Override
+            public void onMapReady(GoogleMap googleMap) {
+                mMap = googleMap;
+            }
+        });
     }
 
-    @Override
-    public void onMapReady(GoogleMap googleMap) {
-        mMap = googleMap;
 
-//        // Add a marker in Sydney and move the camera
-//        LatLng currentLocation = ((MainActivity)getActivity()).getLatLng();
-//        locationOut = currentLocation;
-//        mMap.addMarker(new MarkerOptions().position(currentLocation).title("Current Location").draggable(true));
-//
-//        mMap.setOnMarkerDragListener(new GoogleMap.OnMarkerDragListener() {
-//            @Override
-//            public void onMarkerDragStart(Marker marker) {
-//
-//            }
-//
-//            @Override
-//            public void onMarkerDrag(Marker marker) {
-//
-//            }
-//
-//            @Override
-//            public void onMarkerDragEnd(Marker marker) {
-//                locationOut = marker.getPosition();
-//            }
-//        });
-//
-//        float zoomLevel = 18.0f; //This goes up to 21
-//        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(currentLocation, zoomLevel));
-
+    // This function executes when the back button is pressed
+    public boolean onBackPressed() {
+        marker.remove();
+        ((MainActivity)getActivity()).confirmNewLocation(newLocation);
+        return true;
     }
 
-    public void updateMap(LatLng location){
-        // Add a marker in Sydney and move the camera
+    // This function gets called whenever the user
+    public void updateMap(LatLng currentLocation) {
 
-        //((MainActivity)getActivity()).getLatLng();
-        LatLng currentLocation = location;
-        locationOut = currentLocation;
+        // Move the camera to the current location and set the zoom to 18 units
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(currentLocation, 18.0f));
+
+        // Add a marker to the current position
         marker = mMap.addMarker(new MarkerOptions().position(currentLocation).title("Current Location").draggable(true));
 
-
+        // This gets executed whenever the marker gets dragged in the map
         mMap.setOnMarkerDragListener(new GoogleMap.OnMarkerDragListener() {
             @Override
             public void onMarkerDragStart(Marker marker) {
-
             }
 
             @Override
             public void onMarkerDrag(Marker marker) {
-
             }
 
+            // set newLocation to the location where the marker was dropped
             @Override
             public void onMarkerDragEnd(Marker marker) {
-                locationOut = marker.getPosition();
+                newLocation = marker.getPosition();
             }
         });
 
-        float zoomLevel = 18.0f; //This goes up to 21
-        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(currentLocation, zoomLevel));
+        // In case the user never changes the location
+        newLocation = currentLocation;
     }
 
 
 
+    // TODO research this
     // basically, we cant get rid of this, ignore it
     /**
      * This interface must be implemented by activities that contain this

@@ -81,10 +81,26 @@ public class MainActivity extends AppCompatActivity{
         setStatusBarColor();
 
 
-        createDirectories();
-        loadReportsFromFiles();
 
-        setUpFragments();
+        ReportObject.createDirectories(this);
+        dataSet = ReportObject.loadReportsFromFiles();
+
+        // Initialize Fragments and Fragment Manager
+        fragmentManager = getSupportFragmentManager();
+        fragmentForm = new FragmentForm();
+        fragmentSelectLocation = new FragmentSelectLocation();
+        fragmentHome = new FragmentHome(dataSet);
+
+        // Add fragments to the Fragment Manager
+        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+        fragmentTransaction.add(R.id.main_activity_container, fragmentForm, "formFragment");
+        fragmentTransaction.add(R.id.main_activity_container, fragmentSelectLocation, "changeLocationFragment");
+        fragmentTransaction.add(R.id.main_activity_container, fragmentHome, "reportsFragment");
+
+        // Hide the Form Fragment and the ChangeLocation Fragments as we only want to display the Home Fragment
+        fragmentTransaction.hide(fragmentForm);
+        fragmentTransaction.hide(fragmentSelectLocation);
+        fragmentTransaction.commit();
 
         // Instantiate location client and get users location
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
@@ -101,88 +117,6 @@ public class MainActivity extends AppCompatActivity{
         window.setStatusBarColor(ContextCompat.getColor(this, R.color.black_overlay));
     }
 
-    // This function instantiates the Fragments and adds them to the FragmentManager
-    private void setUpFragments()
-    {
-        fragmentManager = getSupportFragmentManager();
-        fragmentForm = new FragmentForm();
-        fragmentSelectLocation = new FragmentSelectLocation();
-        fragmentHome = new FragmentHome(dataSet);
-
-        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-
-
-        fragmentTransaction.add(R.id.main_activity_container, fragmentForm, "formFragment").hide(fragmentForm);
-        fragmentTransaction.add(R.id.main_activity_container, fragmentSelectLocation, "changeLocationFragment").hide(fragmentSelectLocation);
-        fragmentTransaction.add(R.id.main_activity_container, fragmentHome, "reportsFragment");
-        fragmentTransaction.commit();
-    }
-
-    // this function creates the directories where the reports are stored in the device's persistent storage
-    private void createDirectories()
-    {
-        // Create the parent directory of the reports, check if it already exists.
-        String dirPath = getFilesDir().getAbsolutePath() + File.separator + "ReportsDir";
-        File projDir = new File(dirPath);
-        if (!projDir.exists()) {
-            projDir.mkdirs();
-            Log.d("createDirectories", "Created ReportsDir Directory");
-
-        }
-
-        // Within parent directory, create Reports directory to store report forms
-        String reportFormDirPath = dirPath + File.separator + "Reports";
-        File reportFormDir = new File(reportFormDirPath);
-        if (!reportFormDir.exists()) {
-            reportFormDir.mkdirs();
-            Log.d("createDirectories", "Created Reports Directory inside of ReportsDir Directory");
-
-        }
-
-        // Within parent directory, create ReportPhotos directory to store the photos associated with each form
-        String photoDirPath = dirPath + File.separator + "ReportPhotos";
-        File reportPhotosDir = new File(photoDirPath);
-        if (!reportPhotosDir.exists()) {
-            reportPhotosDir.mkdirs();
-            Log.d("createDirectories", "Created ReportPhotos Directory inside of ReportsDir Directory");
-
-        }
-    }
-    
-
-    // This functions fetches the reports in the devices storage and stores them in the dataset arraylist
-    public void loadReportsFromFiles()
-    {
-        // Store all the files inside of ReportsDir/Reports in an array, files
-        String dirPath = this.getFilesDir().getAbsolutePath() + File.separator + "ReportsDir" + File.separator + "Reports";
-        File directory = new File(dirPath);
-        File[] files = directory.listFiles();
-        ReportObject holder;
-
-        // Check that files is not null
-        if (files == null)
-        {
-            Log.d("loadReportsFromFiles", "There are no reports in storage");
-            return;
-        }
-
-        // Turn the list of files of files into a list of ReportObjects, dataset
-        dataSet = new ArrayList<>();
-
-        for (int i = 0; i < files.length; i++)
-        {
-            // deserialize the file into a ReportObject
-            holder = ReportObject.readFromFile(this, files[i].getName());
-            if (holder != null)
-            {
-                dataSet.add(holder);
-            }
-
-            Log.d("loadReportsFromFiles", "getReports, FileName:" + files[i].getName());
-            Log.d("SAVED", "PULLED, FileName:" + files[i].getName());
-        }
-
-    }
 
     // This function transitions from the current fragment (FragmentHome) to FragmentForm to start a new report
     public void startNewReport()
@@ -232,7 +166,7 @@ public class MainActivity extends AppCompatActivity{
     {
 
         // Delete the report in storage
-        ReportObject.deleteReportFiles(this, report);
+        ReportObject.deleteReportFiles(report);
 
         // Remove the report object from dataset
         dataSet.remove(report);
@@ -253,7 +187,9 @@ public class MainActivity extends AppCompatActivity{
         toolbarTitle.setText("Reports");
 
         // Fetch reports from storage and update the dataset
-        loadReportsFromFiles();
+        dataSet = ReportObject.loadReportsFromFiles();
+
+        //Log.d("PHOTOS", "updateReportsList: " + dataSet.get(dataSet.size() - 1).getPhotoArray().size());
         fragmentHome.updateReportsList(dataSet);
 
         // Hide current fragment and display fragmentHome fragment
