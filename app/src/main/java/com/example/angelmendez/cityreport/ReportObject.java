@@ -37,7 +37,7 @@ public class ReportObject implements Serializable {
     private static String PHOTOS_DIR_PATH;
 
     private Calendar date;
-    private transient ArrayList<Bitmap> photoArray; // Bitmaps are not serielizable
+    private transient ArrayList<Bitmap> photoArray; // Bitmaps are not serializable
     private String description;
     private String category;
     private String fileName; // name of the file containing the report in persistent storage
@@ -46,7 +46,7 @@ public class ReportObject implements Serializable {
 
 
     public ReportObject(
-            ReportLocation locationObject, Calendar date, ArrayList<Bitmap> photoArray, String description, String category, Context context)
+            ReportLocation locationObject, Calendar date, ArrayList<Bitmap> photoArray, String description, String category)
     {
         this.locationObject = locationObject;
         this.date = date;
@@ -294,9 +294,7 @@ public class ReportObject implements Serializable {
             } catch (FileNotFoundException e) {
                 e.printStackTrace();
             }
-
         }
-
 
         return reportObject;
     }
@@ -330,9 +328,6 @@ public class ReportObject implements Serializable {
             {
                 reportList.add(holder);  // add to list
             }
-
-            Log.d("loadReportsFromFiles", "getReports, FileName:" + files[i].getName());
-            Log.d("SAVED", "PULLED, FileName:" + files[i].getName());
         }
 
         return reportList;
@@ -341,6 +336,7 @@ public class ReportObject implements Serializable {
     // this function creates the directories where the reports are stored in the device's persistent storage
     public static void createDirectories(Context context)
     {
+        // Instantiate Directory paths
         PARENT_DIR_PATH =  context.getFilesDir().getAbsolutePath() + File.separator + "ReportsDir";
         REPORTS_DIR_PATH = PARENT_DIR_PATH + File.separator + "Reports";
         PHOTOS_DIR_PATH =  PARENT_DIR_PATH + File.separator + "ReportPhotos";
@@ -351,9 +347,9 @@ public class ReportObject implements Serializable {
         final String PARENT_DIR_PATH = context.getFilesDir().getAbsolutePath() + File.separator + "ReportsDir";
         fileHolder = new File(PARENT_DIR_PATH);
 
+        // Create parent directory
         if (!fileHolder.exists()) {
             fileHolder.mkdirs();
-            Log.d("createDirectories", "Created ReportsDir Directory");
         }
 
         // Within parent directory, create Reports directory to store report forms
@@ -362,7 +358,6 @@ public class ReportObject implements Serializable {
 
         if (!fileHolder.exists()) {
             fileHolder.mkdirs();
-            Log.d("createDirectories", "Created Reports Directory inside of ReportsDir Directory");
         }
 
         // Within parent directory, create ReportPhotos directory to store the photos associated with each form
@@ -371,7 +366,6 @@ public class ReportObject implements Serializable {
 
         if (!fileHolder.exists()) {
             fileHolder.mkdirs();
-            Log.d("createDirectories", "Created ReportPhotos Directory inside of ReportsDir Directory");
         }
     }
 }

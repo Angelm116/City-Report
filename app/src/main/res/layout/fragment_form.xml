@@ -74,7 +74,7 @@
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
-                        android:background="@drawable/map_rounded_background"
+                        android:background="@drawable/form_background_map"
                         android:orientation="vertical"></LinearLayout>
                 </FrameLayout>
 
@@ -85,7 +85,7 @@
                     android:layout_gravity="center"
                     android:layout_marginVertical="10dp"
                     android:height="30dp"
-                    android:background="@drawable/rounded_button_background2"
+                    android:background="@drawable/form_button_background"
                     android:fontFamily="sans-serif-medium"
                     android:onClick="selectNewLocation"
                     android:text="Change Location"
@@ -126,7 +126,7 @@
                         android:layout_marginTop="10dp"
                         android:layout_marginBottom="7dp"
                         android:layout_weight="1"
-                        android:background="@drawable/radio_button_selector"
+                        android:background="@drawable/form_selector_radiobutton_background"
                         android:button="@android:color/transparent"
                         android:stateListAnimator="@animator/radio_button_animation"
                         android:text="Traffic Danger"
@@ -134,7 +134,7 @@
                         android:textColor="#000"
                         android:padding="16dp"
                         android:drawablePadding="0dp"
-                        android:drawableLeft="@drawable/icon_crash_selector"/>
+                        android:drawableLeft="@drawable/form_selector_radiobutton_crash"/>
 
                     <androidx.appcompat.widget.AppCompatRadioButton
                         android:id="@+id/category_2"
@@ -144,14 +144,14 @@
                         android:layout_marginHorizontal="10dp"
                         android:layout_marginBottom="7dp"
                         android:layout_weight="1"
-                        android:background="@drawable/radio_button_selector"
+                        android:background="@drawable/form_selector_radiobutton_background"
                         android:button="@android:color/transparent"
                         android:stateListAnimator="@animator/radio_button_animation"
                         android:text="Suspicious Activity"
                         android:textAlignment="center"
                         android:textColor="#000"
                         android:padding="15dp"
-                        android:drawableLeft="@drawable/icon_car_selector"/>
+                        android:drawableLeft="@drawable/form_selector_radiobutton_car"/>
 
                     <androidx.appcompat.widget.AppCompatRadioButton
                         android:id="@+id/category_3"
@@ -161,14 +161,14 @@
                         android:layout_marginHorizontal="10dp"
                         android:layout_marginBottom="7dp"
                         android:layout_weight="1"
-                        android:background="@drawable/radio_button_selector"
+                        android:background="@drawable/form_selector_radiobutton_background"
                         android:button="@android:color/transparent"
                         android:stateListAnimator="@animator/radio_button_animation"
                         android:text="Physical Damage"
                         android:textAlignment="center"
                         android:textColor="#000"
                         android:padding="16dp"
-                        android:drawableLeft="@drawable/icon_light_selector"/>
+                        android:drawableLeft="@drawable/form_selector_radiobutton_trafficlight"/>
 
                     <androidx.appcompat.widget.AppCompatRadioButton
                         android:id="@+id/category_4"
@@ -178,9 +178,9 @@
                         android:layout_marginHorizontal="10dp"
                         android:layout_marginBottom="7dp"
                         android:layout_weight="1"
-                        android:background="@drawable/radio_button_selector"
+                        android:background="@drawable/form_selector_radiobutton_background"
                         android:button="@android:color/transparent"
-                        android:drawableLeft="@drawable/icon_person_selector"
+                        android:drawableLeft="@drawable/form_selector_radiobutton_person"
                         android:padding="7dp"
                         android:stateListAnimator="@animator/radio_button_animation"
                         android:text="Pedestrian/Bike Danger"
@@ -246,7 +246,7 @@
                         android:layout_marginLeft="15dp"
                         android:layout_marginTop="12dp"
                         android:layout_weight="1"
-                        android:drawableLeft="@drawable/icon_upload_arrow"
+                        android:drawableLeft="@drawable/form_ic_image_attached"
                         android:text="Picture Attached"
                         android:textColor="#32CD32"
                         android:textSize="14sp" />
@@ -282,7 +282,7 @@
             android:layout_gravity="center"
             android:layout_marginTop="25dp"
             android:layout_marginBottom="20dp"
-            android:background="@drawable/rounded_button_background2"
+            android:background="@drawable/form_button_background"
             android:fontFamily="sans-serif-medium"
             android:text="Submit"
             android:textColor="#fff" />

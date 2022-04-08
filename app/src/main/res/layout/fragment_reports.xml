@@ -20,7 +20,7 @@
         android:layout_gravity="end|bottom"
         android:layout_marginBottom="52dp"
         android:layout_marginRight="32dp"
-        android:src="@drawable/ic_baseline_add_24"
+        android:src="@drawable/home_ic_addreport"
         android:tint="#0E0C0C" />
 
 </FrameLayout>

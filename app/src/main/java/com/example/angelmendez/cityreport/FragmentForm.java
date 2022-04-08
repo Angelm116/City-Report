@@ -107,7 +107,7 @@ public class FragmentForm extends Fragment implements PopupMenu.OnMenuItemClickL
         descriptionInput = rootView.findViewById(R.id.description_input);
         dialog = new LoadingDialog(getActivity());
 
-        currentReport = new ReportObject(null, null, null, "", "", getContext());
+        currentReport = new ReportObject(null, null, null, "", "");
 
 
         // Make the attached pictures counter invisible until there are attached pictures
@@ -122,7 +122,7 @@ public class FragmentForm extends Fragment implements PopupMenu.OnMenuItemClickL
 
                 PopupMenu popup = new PopupMenu(getActivity().getApplicationContext(), v);
                 popup.setOnMenuItemClickListener(FragmentForm.this);
-                popup.inflate(R.menu.add_photo_menu);
+                popup.inflate(R.menu.form_menu_add_photo);
                 popup.show();
             }
         });
@@ -300,7 +300,7 @@ public class FragmentForm extends Fragment implements PopupMenu.OnMenuItemClickL
          pictureAttached.setVisibility(View.INVISIBLE);
          submitButton.setText("Submit");
 
-         currentReport = new ReportObject(null, null, null, "", "", getContext());
+         currentReport = new ReportObject(null, null, null, "", "");
 
         // Uncheck all radio buttons
         radioGroup.clearCheck();

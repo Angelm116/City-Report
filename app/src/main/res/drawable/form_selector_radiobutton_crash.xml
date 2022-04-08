@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item android:drawable="@drawable/form_ic_radiobutton_crash_white" android:state_checked="true"/>
+    <item android:drawable="@drawable/form_ic_radiobutton_crash_blue" android:state_checked="false"/>
+
+
+</selector>
