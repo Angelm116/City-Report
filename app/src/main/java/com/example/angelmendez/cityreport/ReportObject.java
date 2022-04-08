@@ -105,7 +105,7 @@ public class ReportObject implements Serializable {
     }
     public String getPhotoDirPath(){return PHOTOS_DIR_PATH + File.separator + photoDirectoryName;}
     public String getReportDirPath(){return REPORTS_DIR_PATH + File.separator + fileName;}
-    public LatLng getLatLng() {return latLng}
+    public LatLng getLatLng() {return latLng;}
 
     // Setter Methods
 
@@ -187,15 +187,8 @@ public class ReportObject implements Serializable {
         // Create JSON object for the report using a hashmap
         Map map = new HashMap();
 
-        map.put("country", locationObject.getCountry());
-        map.put("city", locationObject.getCity());
-        map.put("state", locationObject.getState());
-        map.put("county", locationObject.getCounty());
-        map.put("zipcode", locationObject.getZip());
-        map.put("street_number", locationObject.getStreetNumber());
-        map.put("street_name", locationObject.getStreetName());
-        map.put("latitude", locationObject.getLatitude());
-        map.put("longitude", locationObject.getLongitude());
+        map.put("latitude", latLng.latitude);
+        map.put("longitude", latLng.longitude);
         map.put("category", category);
         map.put("report_description", description);
 
