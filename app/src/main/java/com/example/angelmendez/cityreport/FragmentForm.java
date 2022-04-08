@@ -107,7 +107,7 @@ public class FragmentForm extends Fragment implements PopupMenu.OnMenuItemClickL
         descriptionInput = rootView.findViewById(R.id.description_input);
         dialog = new LoadingDialog(getActivity());
 
-        currentReport = new ReportObject(null, null, null, "", "", getContext());
+        currentReport = new ReportObject(getContext());
 
 
         // Make the attached pictures counter invisible until there are attached pictures
@@ -133,8 +133,14 @@ public class FragmentForm extends Fragment implements PopupMenu.OnMenuItemClickL
             @Override
             public void onClick(View v) {
 
-                setLocationDetails(markerLocation);
-
+                if (isUpdate)
+                {
+                    updateReport(); //update report
+                }
+                else
+                {
+                    saveReport(); // save report
+                }
             }
         });
 
@@ -210,7 +216,7 @@ public class FragmentForm extends Fragment implements PopupMenu.OnMenuItemClickL
 
 
         // Set up radio buttons
-        // Create programatic representations of the radio buttons
+        // Create programmatic representations of the radio buttons
         radioButtons = new ArrayList<>();
         radioButtons.add((RadioButton)rootView.findViewById(R.id.category_1));
         radioButtons.add((RadioButton)rootView.findViewById(R.id.category_2));
@@ -249,7 +255,7 @@ public class FragmentForm extends Fragment implements PopupMenu.OnMenuItemClickL
         currentReport = report;
 
         // Set map marker to point to the report's location
-        updateMap(currentReport.getLocationObject().getLatLng());
+        updateMap(currentReport.getLatLng());
 
         // Check the radio button that matches the category of the report
         RadioButton select = categoryLink.get(currentReport.getCategory());
@@ -300,7 +306,7 @@ public class FragmentForm extends Fragment implements PopupMenu.OnMenuItemClickL
          pictureAttached.setVisibility(View.INVISIBLE);
          submitButton.setText("Submit");
 
-         currentReport = new ReportObject(null, null, null, "", "", getContext());
+         currentReport = new ReportObject(getContext());
 
         // Uncheck all radio buttons
         radioGroup.clearCheck();
@@ -317,6 +323,7 @@ public class FragmentForm extends Fragment implements PopupMenu.OnMenuItemClickL
     // This function saves the report to file storage
     public void saveReport()
     {
+        currentReport.setDate(Calendar.getInstance());
 
         // Check that the user selected a category
         if (selected == null) { // Tell user to select a category
@@ -349,119 +356,6 @@ public class FragmentForm extends Fragment implements PopupMenu.OnMenuItemClickL
         ((MainActivity) getActivity()).loadHomeFragment();
     }
 
-
-    // This function calls the Google Geocode API to get information about the location of the report
-    // This information includes: City, Zipcode, Street etc.
-    public void setLocationDetails(final LatLng latLng)
-    {
-
-        // Get the request queue
-        RequestQueue queue = VolleySingleton.getInstance(getContext()).getQueue();
-
-        // Prepare the URL with the location and the API Key
-        String APIKey = "&key=AIzaSyAQw10ndgEutTniHm00lcLXAnZVbBFEweM";
-        String url = "https://maps.googleapis.com/maps/api/geocode/json?latlng=" + String.valueOf(latLng.latitude) + "," + String.valueOf(latLng.longitude) + APIKey;
-
-        // Make the request to the Geocode API
-        // This is an asynchronous task, the onResponse method is called when the task is completed
-        final JsonObjectRequest jsonObjectRequest = new JsonObjectRequest
-                (Request.Method.GET, url, null, new com.android.volley.Response.Listener<JSONObject>() {
-
-                    // Process the response by extracting the different address components from the response JSON object
-                    // More info on structure of response JSON object: https://developers.google.com/maps/documentation/geocoding/overview
-                    @Override
-                    public void onResponse(JSONObject response) {
-
-                        try {
-                            // Map that will store the address components
-                            HashMap addressComponents = new HashMap<String, Integer>();
-
-                            // Get the list of component objects from the response
-                            JSONArray componentObjectList = response.getJSONArray("results").getJSONObject(1).getJSONArray("address_components");
-                            Log.d("GeoLocation", componentObjectList.toString());
-                            JSONObject componentObject;
-                            JSONArray componentTypes;
-                            String type;
-                            String component;
-
-                            // Identify components and store them in the addressComponents map
-                            for (int i = 0; i < componentObjectList.length(); i++)
-                            {
-                                componentObject = componentObjectList.getJSONObject(i);
-                                componentTypes = componentObject.getJSONArray("types");
-                                component = componentObject.getString("short_name");
-
-
-                                // Loop through the types of this componentObject to identify it
-                                innerLoop:
-                                for (int j = 0; j < componentTypes.length(); j++)
-                                {
-                                    type = componentTypes.getString(j);
-
-                                    switch(type) {
-                                        case "country":
-                                            addressComponents.put("country", component);
-                                            break innerLoop;
-                                        case "administrative_area_level_1":
-                                            addressComponents.put("state", component);
-                                            break innerLoop;
-                                        case "administrative_area_level_2":
-                                            addressComponents.put("county", component);
-                                            break innerLoop;
-                                        case "sublocality":
-                                        case "locality":
-                                        case "sublocality_level_1":
-                                            addressComponents.put("city", component);
-                                            break innerLoop;
-                                        case "postal_code":
-                                            addressComponents.put("zip", component);
-                                            break innerLoop;
-                                        case "street_number":
-                                            addressComponents.put("street_number", component);
-                                            break innerLoop;
-                                        case "route":
-                                            addressComponents.put("street_name", component);
-                                            break innerLoop;
-                                        default:
-                                            // code block
-                                    }
-                                }
-                            }
-
-                            locationObject = new ReportLocation(addressComponents, latLng.latitude, latLng.longitude);
-                            currentReport.setLocationObject(locationObject);
-                            currentReport.setDate(Calendar.getInstance());
-
-                            if (isUpdate)
-                            {
-                                updateReport(); //update report
-                            }
-                            else
-                            {
-                                saveReport(); // save report
-                            }
-
-                            
-                        } catch (JSONException e) {
-                            e.printStackTrace();
-                        }
-
-
-                    }
-                }, new Response.ErrorListener() {   // Called if the request returns an error
-
-                    @Override
-                    public void onErrorResponse(VolleyError error) {
-                        // TODO: Handle error
-
-                        Log.d("near", "didnt work2");
-
-                    }
-                });
-
-        queue.add(jsonObjectRequest);
-
-    }
 
     public void updateMap(final LatLng markerLocation) {
 

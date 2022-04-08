@@ -9,6 +9,7 @@ import com.android.volley.Request;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
+import com.google.android.gms.common.api.HasApiKey;
 import com.google.android.gms.maps.model.LatLng;
 
 import org.json.JSONObject;
@@ -42,21 +43,42 @@ public class ReportObject implements Serializable {
     private String category;
     private String fileName; // name of the file containing the report in persistent storage
     private String photoDirectoryName;
-    private ReportLocation locationObject;
+    private HashMap<String, String> locationInfo;
+    private LatLng latLng;
 
 
     public ReportObject(
-            ReportLocation locationObject, Calendar date, ArrayList<Bitmap> photoArray, String description, String category, Context context)
+            HashMap locationInfo, Calendar date, ArrayList<Bitmap> photoArray, String description, String category, LatLng latLng, Context context)
     {
-        this.locationObject = locationObject;
         this.date = date;
         this.photoArray = photoArray;
         this.description = description;
         this.category = category;
         this.fileName = generateFileName();
         this.photoDirectoryName = generateFileName() + "_DIR";
+        this.locationInfo = locationInfo;
+        this.latLng = latLng;
 
     }
+
+    public ReportObject(Calendar date, ArrayList<Bitmap> photoArray, String description, String category, LatLng latLng, Context context)
+    {
+        this.date = date;
+        this.photoArray = photoArray;
+        this.description = description;
+        this.category = category;
+        this.fileName = generateFileName();
+        this.photoDirectoryName = generateFileName() + "_DIR";
+        this.locationInfo = locationInfo;
+        this.latLng = latLng;
+    }
+
+    public ReportObject(Context context)
+    {
+
+
+    }
+
 
     // Getter Methods
 
@@ -72,8 +94,8 @@ public class ReportObject implements Serializable {
     public Calendar getDate() {
         return date;
     }
-    public ReportLocation getLocationObject() {
-        return locationObject;
+    public HashMap<String, String> getLocationInfo() {
+        return locationInfo;
     }
     public String getDescription() {
         return description;
@@ -83,6 +105,7 @@ public class ReportObject implements Serializable {
     }
     public String getPhotoDirPath(){return PHOTOS_DIR_PATH + File.separator + photoDirectoryName;}
     public String getReportDirPath(){return REPORTS_DIR_PATH + File.separator + fileName;}
+    public LatLng getLatLng() {return latLng}
 
     // Setter Methods
 
@@ -92,7 +115,7 @@ public class ReportObject implements Serializable {
     public void setDate(Calendar date) {
         this.date = date;
     }
-    public void setLocationObject(ReportLocation locationObject) { this.locationObject = locationObject; }
+    public void setLocationObject(HashMap locationInfo) { this.locationInfo = locationInfo; }
     public void setDescription(String description) {
         this.description = description;
     }
