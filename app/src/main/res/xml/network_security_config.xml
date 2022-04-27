@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">http://test3-env-1.eba-sag8w2d6.us-east-2.elasticbeanstalk.com/api/upload-report</domain>
+    </domain-config>
+</network-security-config>

@@ -72,7 +72,7 @@ public class RecyclerListAdapter extends RecyclerView.Adapter<RecyclerViewHolder
             @Override
             public void onClick(View v) {
                 int position  = recyclerView.getChildLayoutPosition(view);
-                mainActivity.updateReport(dataSet.get(position));
+                mainActivity.startFormFragment(dataSet.get(position));
             }
         });
 
@@ -99,7 +99,7 @@ public class RecyclerListAdapter extends RecyclerView.Adapter<RecyclerViewHolder
 
         // Set date and near address test
         holder.dateText.setText("On " + dateTime);
-        holder.nearStreetText.setText("Near " + dataSet.get(position).getLocationObject().getFormattedAddress());
+        holder.nearStreetText.setText("Location: " +  dataSet.get(position).getLatitude() + "," + dataSet.get(position).getLongitude());
 
         // TODO MAKE SURE THAT ITS SET TO NULL BEFORE SAVED SO THAT YOU ONLY HAVE TO CHECK FOR NULL HERE
         // Check if the report has pictures attached
@@ -112,7 +112,7 @@ public class RecyclerListAdapter extends RecyclerView.Adapter<RecyclerViewHolder
         else
         {
             // Set the display picture to "not image available"
-            int imageResource = context.getResources().getIdentifier( "@drawable/no_image_available", null, context.getPackageName());
+            int imageResource = context.getResources().getIdentifier( "@drawable/home_image_no_image_available", null, context.getPackageName());
             Drawable noPhotoAvailble = context.getResources().getDrawable(imageResource);
             holder.photo.setImageDrawable(noPhotoAvailble);
         }
@@ -142,11 +142,9 @@ public class RecyclerListAdapter extends RecyclerView.Adapter<RecyclerViewHolder
     {
 
         Intent shareIntent;
-
+        // TODO FIX THIS
         // URI for location of the report in Google Maps
-        String mapsURI = "http://maps.google.com/maps?saddr=" +
-                dataSet.get(position).getLocationObject().getLatitude() +","+
-                dataSet.get(position).getLocationObject().getLongitude();
+        String mapsURI = "http://maps.google.com/maps?saddr=" + dataSet.get(position).getLatitude() + "," + dataSet.get(position).getLongitude();
 
         // Report Category
         String category = dataSet.get(position).getCategory();

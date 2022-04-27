@@ -87,7 +87,6 @@
                     android:height="30dp"
                     android:background="@drawable/form_button_background"
                     android:fontFamily="sans-serif-medium"
-                    android:onClick="selectNewLocation"
                     android:text="Change Location"
                     android:textColor="#fff" />
 

@@ -55,13 +55,10 @@ public class MainActivity extends AppCompatActivity{
     public FragmentSelectLocation fragmentSelectLocation;
     public FragmentHome fragmentHome;
 
-
     private FusedLocationProviderClient fusedLocationClient;
     private LatLng userLastKnownLocation;
-    private ArrayList<ReportObject> dataSet;
+    private ArrayList<ReportObject> dataSet; // Dataset of the HomeFragment list
     private TextView toolbarTitle;
-
-    LatLng locationHolder = null;
 
     int PERMISSION_ID = 44;
 
@@ -78,10 +75,12 @@ public class MainActivity extends AppCompatActivity{
 
         // Set the toolbar title and color
         toolbarTitle = findViewById(R.id.toolbar_title);
-        setStatusBarColor();
+        Window window = this.getWindow();
+        window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+        window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+        window.setStatusBarColor(ContextCompat.getColor(this, R.color.black_overlay));
 
-
-
+        // Create the directories used to store reports in the device's storage
         ReportObject.createDirectories(this);
         dataSet = ReportObject.loadReportsFromFiles();
 
@@ -108,63 +107,39 @@ public class MainActivity extends AppCompatActivity{
         
     }
 
-    // This function sets the color of the status bar
-    private void setStatusBarColor()
-    {
-        Window window = this.getWindow();
-        window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
-        window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-        window.setStatusBarColor(ContextCompat.getColor(this, R.color.black_overlay));
-    }
 
-
-    // This function transitions from the current fragment (FragmentHome) to FragmentForm to start a new report
-    public void startNewReport()
+    // This function transitions from FragmentHome to FragmentForm to start a new report or update an existing one.
+    public void startFormFragment(ReportObject report)
     {
         // Change the actions bar's title and enable home button
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setDisplayShowHomeEnabled(true);
-        toolbarTitle.setText("New Report");
 
         // reset the form in fragmentForm
         fragmentForm.resetForm();
+
+        // Is it an update or a new report?
+        if (report == null) {
+            toolbarTitle.setText("New Report");
+        }
+        else {
+            toolbarTitle.setText("Update Report");
+            fragmentForm.populateForm(report); // populate the form in FragmentForm with the data of the report being updated
+        }
 
         // Hide current fragment and display fragmentForm fragment
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
         fragmentTransaction.hide(fragmentHome);
         fragmentTransaction.show(fragmentForm);
         fragmentTransaction.commit();
+
+        // set currentFragment
         currentFragment = fragmentForm;
     }
 
-    // This function transitions from the current fragment (FragmentHome) to FragmentForm to update an existing report
-    public void updateReport(ReportObject report)
-    {
-        // Change the actions bar's title and enable home button
-        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-        getSupportActionBar().setDisplayShowHomeEnabled(true);
-        toolbarTitle.setText("Update Report");
-
-        // reset the form in fragmentForm
-        fragmentForm.resetForm();
-
-        // populate the form in FragmentForm with the data of the report being updated
-        fragmentForm.populateForm(report);
-
-        // Hide current fragment and display fragmentForm fragment
-        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-        fragmentTransaction.hide(fragmentHome);
-        fragmentTransaction.show(fragmentForm);
-        fragmentTransaction.commit();
-        currentFragment = fragmentForm;
-        Log.d("SAVED", "pulled location:" + report.getLocationObject().getLatitude() + ", " + report.getLocationObject().getLongitude());
-
-    }
-
-    // This function deletes a report
+    // This function deletes a report; it is called when a report is long pressed
     public boolean deleteReport(ReportObject report)
     {
-
         // Delete the report in storage
         ReportObject.deleteReportFiles(report);
 
@@ -174,11 +149,11 @@ public class MainActivity extends AppCompatActivity{
         // Update the RecyclerView to display the updated dataset in FragmentHome
         fragmentHome.updateReportsList(dataSet);
 
-
         return true;
     }
 
 
+    // This function transitions to the HomeFragment after the user submits the form in FormFragment
     public void loadHomeFragment(){
 
         // Change the actions bar's title and disable home button
@@ -197,14 +172,16 @@ public class MainActivity extends AppCompatActivity{
         fragmentTransaction.hide(fragmentForm);
         fragmentTransaction.show(fragmentHome);
         fragmentTransaction.commit();
+
+        // update currentFragment
         currentFragment = fragmentHome;
 
-        Log.d("loadHomeFragment", " out MainActivity: loadReportsFragment");
+        //Log.d("loadHomeFragment", " out MainActivity: loadReportsFragment");
 
     }
 
     // This function opens the FragmentSelectLocation from the FragmentForm
-    public void selectNewLocation(View view){
+    public void selectNewLocation(View view, LatLng location){
 
         // Hide the action bar
         getSupportActionBar().hide();
@@ -217,7 +194,7 @@ public class MainActivity extends AppCompatActivity{
         currentFragment = fragmentSelectLocation;
 
         // Update the map in fragmentSelectLocation with the user's last known location
-        fragmentSelectLocation.updateMap(userLastKnownLocation);
+        fragmentSelectLocation.updateMap(location);
     }
 
     // This function closes the FragmentSelectLocation fragment, takes the user back to the FormFragment,
@@ -238,8 +215,6 @@ public class MainActivity extends AppCompatActivity{
         fragmentForm.updateMap(location);
 
     }
-
-
 
 
     // This function gets the user last known location
@@ -349,6 +324,7 @@ public class MainActivity extends AppCompatActivity{
         }
     }
 
+    // If the app is paused, get the last known location once it is is resumed.
     @Override
     public void onResume() {
         super.onResume();
@@ -358,18 +334,8 @@ public class MainActivity extends AppCompatActivity{
     }
 
 
-    public void setLocationHolder(LatLng location)
-    {
-        locationHolder = location;
-    }
-
-    public LatLng getLocationHolder() {
-        return locationHolder;
-    }
-
+    // Used to get the last known location from fragments
     public LatLng getUserLastKnownLocation() {
-
-
         return userLastKnownLocation;
     }
 
@@ -378,22 +344,15 @@ public class MainActivity extends AppCompatActivity{
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
-            case android.R.id.home:
-                getSupportActionBar().setDisplayHomeAsUpEnabled(false);
-                getSupportActionBar().show();
-                toolbarTitle.setText("Reports");
-                fragmentForm.resetForm();
-                FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-                fragmentTransaction.hide(fragmentForm);
-                fragmentTransaction.show(fragmentHome);
-                fragmentTransaction.commit();
-                currentFragment = fragmentHome;
+            case android.R.id.home: // Home was the previous fragment, load it
+                loadHomeFragment();
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
     }
 
+    // This function gets executed when the back button is pressed.
     @Override
     public void onBackPressed() {
 

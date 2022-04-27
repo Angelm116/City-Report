@@ -67,9 +67,7 @@ public class FragmentForm extends Fragment implements PopupMenu.OnMenuItemClickL
     Marker marker;
 
     // Report Fields
-    Calendar date = null;
     LatLng markerLocation = null;
-    ReportLocation locationObject;
     ReportObject currentReport;
     boolean isUpdate;
 
@@ -85,6 +83,7 @@ public class FragmentForm extends Fragment implements PopupMenu.OnMenuItemClickL
     GridLayout grid;
     Button submitButton;
     Button addPictureButton;
+    Button selectLocationButton;
     NestedScrollView scrollView;
     LoadingDialog dialog;
 
@@ -102,12 +101,14 @@ public class FragmentForm extends Fragment implements PopupMenu.OnMenuItemClickL
         grid = rootView.findViewById(R.id.grid);
         addPictureButton = (Button) rootView.findViewById(R.id.add_picture_btn);
         submitButton = (Button) rootView.findViewById(R.id.submit_btn);
+        selectLocationButton = (Button) rootView.findViewById(R.id.change_location_btn);
         pictureAttached = rootView.findViewById(R.id.picture_attached);
         radioGroup = rootView.findViewById(R.id.radioGroup);
         descriptionInput = rootView.findViewById(R.id.description_input);
         dialog = new LoadingDialog(getActivity());
 
-        currentReport = new ReportObject(getContext());
+        // This is the report that we are currently working with
+        currentReport = new ReportObject();
 
 
         // Make the attached pictures counter invisible until there are attached pictures
@@ -133,14 +134,17 @@ public class FragmentForm extends Fragment implements PopupMenu.OnMenuItemClickL
             @Override
             public void onClick(View v) {
 
-                if (isUpdate)
-                {
-                    updateReport(); //update report
-                }
-                else
-                {
-                    saveReport(); // save report
-                }
+                saveReport(); // save report
+
+            }
+        });
+
+        selectLocationButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                ((MainActivity)getActivity()).selectNewLocation(v, markerLocation);
+
             }
         });
 
@@ -150,7 +154,7 @@ public class FragmentForm extends Fragment implements PopupMenu.OnMenuItemClickL
 
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-
+                // disregard
             }
 
             // Whenever the user changes the text, override the current value of description with the changes
@@ -162,7 +166,7 @@ public class FragmentForm extends Fragment implements PopupMenu.OnMenuItemClickL
 
             @Override
             public void afterTextChanged(Editable s) {
-
+                // disregard
             }
 
         });
@@ -174,7 +178,7 @@ public class FragmentForm extends Fragment implements PopupMenu.OnMenuItemClickL
             @Override
             public void onFocusChange(View v, boolean hasFocus) {
                 if (!hasFocus) {
-                    InputMethodManager inputMethodManager =(InputMethodManager)getActivity().getSystemService(Activity.INPUT_METHOD_SERVICE);
+                    InputMethodManager inputMethodManager = (InputMethodManager)getActivity().getSystemService(Activity.INPUT_METHOD_SERVICE);
                     inputMethodManager.hideSoftInputFromWindow(v.getWindowToken(), 0);
                 }
             }
@@ -253,13 +257,13 @@ public class FragmentForm extends Fragment implements PopupMenu.OnMenuItemClickL
 
         isUpdate = true;
         currentReport = report;
-
+        markerLocation = new LatLng(currentReport.getLatitude(), currentReport.getLongitude());
         // Set map marker to point to the report's location
-        updateMap(currentReport.getLatLng());
+        updateMap(markerLocation);
 
         // Check the radio button that matches the category of the report
-        RadioButton select = categoryLink.get(currentReport.getCategory());
-        radioGroup.check(select.getId());
+        selected = categoryLink.get(currentReport.getCategory());
+        radioGroup.check(selected.getId());
 
         // Set the description text to the description of the report
         descriptionInput.setText(currentReport.getDescription());
@@ -295,8 +299,6 @@ public class FragmentForm extends Fragment implements PopupMenu.OnMenuItemClickL
     {
         // Reset variables
          isUpdate = false;
-         date = null;
-         locationObject = null;
          markerLocation = null;
 
          scrollView.scrollTo(0, 0);
@@ -306,13 +308,14 @@ public class FragmentForm extends Fragment implements PopupMenu.OnMenuItemClickL
          pictureAttached.setVisibility(View.INVISIBLE);
          submitButton.setText("Submit");
 
-         currentReport = new ReportObject(getContext());
+         currentReport = new ReportObject();
 
         // Uncheck all radio buttons
         radioGroup.clearCheck();
         if (selected != null) // if one was selected, reset its text color to black
         {
             selected.setTextColor(getResources().getColor(R.color.black));
+            selected = null;
         }
 
         // Update the map with the user's current location
@@ -323,6 +326,7 @@ public class FragmentForm extends Fragment implements PopupMenu.OnMenuItemClickL
     // This function saves the report to file storage
     public void saveReport()
     {
+        currentReport.setLatLng(markerLocation);
         currentReport.setDate(Calendar.getInstance());
 
         // Check that the user selected a category
@@ -333,11 +337,7 @@ public class FragmentForm extends Fragment implements PopupMenu.OnMenuItemClickL
         }
         else { // Proceed with saving the report
 
-            date = Calendar.getInstance();
-
-            currentReport.setDate(Calendar.getInstance());
-            currentReport.uploadToServer(getContext());
-            //currentReport.saveToFile();
+            currentReport.uploadToServer(getContext(), isUpdate);
             ReportObject.saveToFile(currentReport);
 
             // Load home fragment
@@ -346,18 +346,9 @@ public class FragmentForm extends Fragment implements PopupMenu.OnMenuItemClickL
     }
 
 
-    public void updateReport()
-    {
-        Log.d("PHOTOLENGTH", "" + currentReport.getPhotoArray().size());
-        // update file with new info.
-        ReportObject.saveToFile(currentReport);
-
-        // load home fragment
-        ((MainActivity) getActivity()).loadHomeFragment();
-    }
-
-
+    // updates the map to the given location
     public void updateMap(final LatLng markerLocation) {
+
 
         mMapView.getMapAsync(new OnMapReadyCallback() {
 
@@ -388,7 +379,6 @@ public class FragmentForm extends Fragment implements PopupMenu.OnMenuItemClickL
     // Menu that appears when you click add photo, lets you choose between camera or gallery
     @Override
     public boolean onMenuItemClick(MenuItem item) {
-        Toast.makeText(getActivity().getApplicationContext(), "Selected Item: " + item.getTitle(), Toast.LENGTH_SHORT).show();
         switch (item.getItemId()) {
             case R.id.from_camera: // Choose from camera
                 Intent takePicture = new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
@@ -410,8 +400,7 @@ public class FragmentForm extends Fragment implements PopupMenu.OnMenuItemClickL
 
 
         // if currentReport's photoarray is null, initalize it
-        if(currentReport.getPhotoArray() == null)
-        {
+        if(currentReport.getPhotoArray() == null) {
             currentReport.setPhotoArray(new ArrayList<Bitmap>());
         }
 

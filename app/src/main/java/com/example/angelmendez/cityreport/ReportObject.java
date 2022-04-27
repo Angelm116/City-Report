@@ -5,6 +5,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.util.Log;
 
+import com.android.volley.DefaultRetryPolicy;
 import com.android.volley.Request;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
@@ -31,8 +32,6 @@ import java.util.Random;
 
 public class ReportObject implements Serializable {
 
-    //private static final long serialVersionUID = 6529685098267757690L;
-
     private static String PARENT_DIR_PATH;
     private static String REPORTS_DIR_PATH;
     private static String PHOTOS_DIR_PATH;
@@ -44,38 +43,16 @@ public class ReportObject implements Serializable {
     private String fileName; // name of the file containing the report in persistent storage
     private String photoDirectoryName;
     private HashMap<String, String> locationInfo;
-    private LatLng latLng;
+    private double latitude;
+    private double longitude;
 
 
-    public ReportObject(
-            HashMap locationInfo, Calendar date, ArrayList<Bitmap> photoArray, String description, String category, LatLng latLng, Context context)
+    // Constructor
+    public ReportObject()
     {
-        this.date = date;
-        this.photoArray = photoArray;
-        this.description = description;
-        this.category = category;
         this.fileName = generateFileName();
         this.photoDirectoryName = generateFileName() + "_DIR";
-        this.locationInfo = locationInfo;
-        this.latLng = latLng;
-
-    }
-
-    public ReportObject(Calendar date, ArrayList<Bitmap> photoArray, String description, String category, LatLng latLng, Context context)
-    {
-        this.date = date;
-        this.photoArray = photoArray;
-        this.description = description;
-        this.category = category;
-        this.fileName = generateFileName();
-        this.photoDirectoryName = generateFileName() + "_DIR";
-        this.locationInfo = locationInfo;
-        this.latLng = latLng;
-    }
-
-    public ReportObject(Context context)
-    {
-
+        //this.photoArray = new ArrayList<>();
 
     }
 
@@ -105,7 +82,10 @@ public class ReportObject implements Serializable {
     }
     public String getPhotoDirPath(){return PHOTOS_DIR_PATH + File.separator + photoDirectoryName;}
     public String getReportDirPath(){return REPORTS_DIR_PATH + File.separator + fileName;}
-    public LatLng getLatLng() {return latLng;}
+    //public LatLng getLatLng() {return latLng;}
+    public double getLatitude() {return this.latitude;}
+    public double getLongitude() {return this.longitude;}
+
 
     // Setter Methods
 
@@ -122,21 +102,36 @@ public class ReportObject implements Serializable {
     public void setCategory(String category) {
         this.category = category;
     }
+    public void setLatLng(LatLng latLng) {
+        this.latitude = latLng.latitude;
+        this.longitude = latLng.longitude;
+    }
 
 
     // This function saves or updates the given report in persistent storage
     public static void saveToFile(ReportObject report) {
 
         // Check if the report object has any photos attached and save them to persistent storage.
-        if (report.getPhotoArray() != null && report.getPhotoArray().size() != 0)
+        if (report.getPhotoArray() != null)
         {
-            // Delete any photos that the report has in persistent storage
             File reportPhotoDir = new File(report.getPhotoDirPath());
+
+            // Create the photo directory for this report, if it doesnt exist
+            if (!reportPhotoDir.exists()) {
+                reportPhotoDir.mkdirs();
+            }
+
+            // Delete any photos in the report's photo directory, if any
             File[] photoFiles = reportPhotoDir.listFiles();
 
-            for (int i = 0; i < photoFiles.length; i++)
-            {
-                photoFiles[i].delete();
+            if (photoFiles != null) {
+
+                // delete photos
+                for (int i = 0; i < photoFiles.length; i++)
+                {
+
+                    photoFiles[i].delete();
+                }
             }
 
             // Save all the photos in the report's photoArray to persistent storage.
@@ -147,7 +142,8 @@ public class ReportObject implements Serializable {
                 for(int i = 0; i < report.getPhotoArray().size(); i++)
                 {
                     fileName = report.getPhotoDirPath() + File.separator + generateFileName() + ".jpg";
-                    fileOutputStream = new FileOutputStream(new File(fileName));
+                    File file = new File(fileName);
+                    fileOutputStream = new FileOutputStream(file);
                     report.getPhotoArray().get(i).compress(Bitmap.CompressFormat.JPEG, 90, fileOutputStream);
                     fileOutputStream.close();
                 }
@@ -179,16 +175,24 @@ public class ReportObject implements Serializable {
         }
     }
 
-    // TODO: UPDATE THIS FUNCTION TO REFLECT THE NEW API call.
-    public void uploadToServer(Context context) {
+    // Uploads the current report to the server.
+    public void uploadToServer(Context context, Boolean isUpdate) {
+
         // URL of server and API call to upload the current report
-        String url = "http://18.116.1.55/api/upload-report";
+        String url;
+
+        if (isUpdate) {
+            return; // TODO: Should set the URL to the update api instead of returning
+        }
+        else {
+            url = "http://test3-env-1.eba-sag8w2d6.us-east-2.elasticbeanstalk.com/api/upload-report"; // TODO: Change this to the current server URL
+        }
 
         // Create JSON object for the report using a hashmap
         Map map = new HashMap();
 
-        map.put("latitude", latLng.latitude);
-        map.put("longitude", latLng.longitude);
+        map.put("lat", latitude);
+        map.put("lng", longitude);
         map.put("category", category);
         map.put("report_description", description);
 
@@ -220,6 +224,7 @@ public class ReportObject implements Serializable {
                     }
                 });
 
+        jsonObjectRequest.setRetryPolicy(new DefaultRetryPolicy(20 * 1000, 2, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
         // Access the RequestQueue through the Volley singleton class.
         VolleySingleton.getInstance(context).getQueue().add(jsonObjectRequest);
     }
@@ -230,9 +235,10 @@ public class ReportObject implements Serializable {
         File photoDirectory = new File(report.getPhotoDirPath());
         File[] photoFiles = photoDirectory.listFiles();
 
-        for (int i = 0; i < photoFiles.length; i++)
-        {
-            photoFiles[i].delete();
+        if (photoFiles != null) {
+            for (int i = 0; i < photoFiles.length; i++) {
+                photoFiles[i].delete();
+            }
         }
 
         // delete photo directory
@@ -384,4 +390,27 @@ public class ReportObject implements Serializable {
             fileHolder.mkdirs();
         }
     }
+
+
+
+    // This might be helpful in the future
+    // This function would return the formatted address of the report
+//    public String getFormattedAddress()
+//    {
+//        String formattedAddress = "";
+//
+//        formattedAddress += streetNumber == null ? "" : streetNumber + " ";
+//        formattedAddress += streetName == null ? "" : streetName + ", ";
+//        formattedAddress += city == null ? "" : city + " ";
+//        formattedAddress += state == null ? "" : state + " ";
+//        formattedAddress += zip == null ? "" : zip;
+//
+//
+//        return formattedAddress.trim();
+//    }
+//
+//    public String getStreetAddress()
+//    {
+//        return streetNumber + " " + streetName;
+//    }
 }
